@@ -41,7 +41,11 @@ public class User
     public void Rename(string name) => Name = name;
 }
 
-// Value object: C# records give you value equality + immutability free.
+// Value object: a POSITIONAL record is a convenient fit — it gives
+// value-based equality plus init-only properties by default.
+// (`record` itself only guarantees value equality; you can write a
+//  mutable record with settable properties. Immutability comes from
+//  positional/init-only members, or `readonly record struct`.)
 public record Money(decimal Amount, string Currency);
 
 var a = new Money(100, "INR");
@@ -56,9 +60,11 @@ lets you put currency-mismatch rules and rounding in one place. That's
 the "primitive obsession" fix, and it comes up in Splitwise, Amazon
 Shopping, ATM, and every payment-touching case study.
 
-**C# note**: `record` is the natural fit for value objects — value-based
-`Equals`/`GetHashCode`, `with`-expressions for derived copies, and
-immutability by default. Use a `class` for entities, where reference
+**C# note**: records are the natural fit for value objects — value-based
+`Equals`/`GetHashCode` and `with`-expressions for derived copies. For
+immutability, use the **positional** form (init-only properties) or
+`readonly record struct`; `record` alone doesn't prevent you from
+declaring settable properties. Use a `class` for entities, where reference
 identity is what you want.
 
 ---
@@ -303,19 +309,45 @@ public class BookTicketUseCase                 // application service
 }
 ```
 
-**The rule of thumb**: the application service contains *no business
-decisions* — only sequencing, delegation, and translating results. Every
-"is this allowed?" question is answered inside a domain object. If your
-use case is full of `if (seat.Status == ...)`, the rule has leaked out of
-the domain and you're heading for an
-[anemic model](../10-Anti-Patterns/notes.md).
+**The rule of thumb**: *domain rules* live in the domain model or in
+domain services; the application service **coordinates** those rules as
+one use case. It does make decisions — "payment failed, so release the
+hold and return a failure", "this request needs payment at all" — but
+those are **workflow** decisions about sequencing and failure handling,
+not domain invariants.
+
+The smell to watch for is the application service **reaching into domain
+state and re-deriving a rule the domain should own**:
+
+```csharp
+// ✗ Domain logic leaking into the use case
+if (seat.Status == SeatStatus.Available)
+    seat.Status = SeatStatus.Booked;
+
+// ✓ Ask the domain; it enforces its own invariant
+if (!show.TryHoldSeats(seatIds, userId))
+    return BookingResult.SeatsUnavailable();
+```
+
+If your use case is full of `if (x.Status == ...)`, the rule has leaked
+and you're heading for an [anemic model](../10-Anti-Patterns/notes.md).
+
+**And not every rule belongs on an entity.** Rules that span several
+objects, or that depend on a policy no single entity owns, belong in a
+**domain service** — that's exactly what `PricingService` and
+`FareCalculator` are for. "Put it on the entity" is the default, not a law.
 
 | | Domain Service | Application Service |
 |---|---|---|
-| Contains | Business rules spanning entities | Step sequencing for one use case |
+| Contains | Business rules spanning entities | Step sequencing and failure handling for one use case |
 | Example | `PricingService`, `FareCalculator` | `BookTicketUseCase`, `CheckoutOrder` |
-| Talks to repositories/gateways? | No | Yes — that's its job |
+| Depends on | Domain objects, and domain-level abstractions if needed (e.g. `IExchangeRateProvider`) | Repositories, gateways, notifiers — wiring the use case to the outside world |
 | Would it change if we swapped the UI or database? | No | Possibly |
+
+The dependency row is a tendency, not a prohibition: a domain service may
+depend on a **domain abstraction** without becoming an application
+service. The real split is *what kind of thing it contains* — domain
+behavior versus use-case coordination.
 
 Note this is also what a [Facade](../04-Design-Patterns/Structural/Facade/notes.md)
 often turns out to be in practice — one entry point that sequences a

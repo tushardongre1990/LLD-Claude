@@ -17,10 +17,16 @@ Both: a context object holds an interface reference and delegates to it.
 
 | | Strategy | State |
 |---|---|---|
-| Who picks the implementation | The **client**, usually once at construction | The **object itself**, as events happen to it |
+| Who picks the implementation | The **client** — at construction, or swapped later via a setter | The **object itself**, as events happen to it |
 | Do implementations know each other? | No — strategies are independent | Yes — each state knows which states it can transition to |
 | Models | Interchangeable **algorithms** | A **lifecycle** with legal/illegal transitions |
 | Example | `FeeStrategy` chosen when a ticket is created | `Order`: Placed → Paid → Shipped → Delivered |
+
+Note that Strategy *can* be swapped at runtime (`pricing.SetStrategy(new
+PremiumPricing())`) — "chosen once at construction" is the common case,
+not a requirement. The reliable discriminator is the second row: strategies
+don't know about each other, whereas states drive transitions to
+one another.
 
 **One-liner**: Strategy swaps *how a job is done*; State swaps *what the
 object currently is*.
@@ -58,11 +64,14 @@ Nearly identical structure — both wrap an object behind its own interface.
 |---|---|---|
 | Intent | **Add** responsibility | **Control access** to the same conceptual object |
 | Caller-visible capability | New behavior the base lacked | Unchanged contract, possibly deferred/gated |
-| Who supplies the wrapped object | Caller passes in an existing instance | Proxy often creates/owns it (lazily) |
+| Who supplies the wrapped object | Caller passes in an existing instance | Often created/owned by the proxy (lazily) — but a proxy can equally be handed an existing subject |
 | Stacking | Designed for it | Rare |
 
-**One-liner**: Decorator makes it *do more*; Proxy decides *whether and
-when* it does it at all.
+**Lead with intent, not construction.** The last row is a common tendency,
+not a defining trait — a protection or logging proxy usually receives an
+already-built subject. The reliable discriminator is the first row:
+**Decorator makes it *do more*; Proxy decides *whether and when* it does
+it at all.**
 
 ---
 
@@ -140,9 +149,15 @@ A Mediator often *uses* Observer internally to push updates.
 
 | | Observer (GoF) | Pub-Sub |
 |---|---|---|
-| Coupling | Subject holds direct observer references | A broker sits between; neither side knows the other |
-| Scope | In-process | Often distributed across services |
-| Delivery | Synchronous, inline | Usually async/queued |
+| Coupling ⭐ | Subject holds direct observer references | A broker/event bus sits between; neither side knows the other |
+| Scope | Typically in-process | Often distributed across services |
+| Delivery | Typically synchronous, inline | Usually async/queued |
+
+**Coupling is the defining row**; the other two are typical rather than
+required. An Observer implementation can dispatch asynchronously, and a
+pub-sub bus can run entirely in-process. If asked, lead with: *does the
+publisher hold references to its subscribers, or does an intermediary
+sit between them?*
 
 ---
 
