@@ -173,8 +173,23 @@ classDiagram
 
 `ParkingLot` now depends on an abstraction; swap in `InMemoryRepository` for
 unit tests, `SqlRepository` in production, with zero changes to
-`ParkingLot`. This is also literally the **Strategy pattern** and the
-**Dependency Injection** technique you'll use constantly in case studies.
+`ParkingLot`. **Dependency Injection** — handing the implementation in
+through the constructor — is the technique that achieves this, and you'll
+use it constantly in case studies.
+
+⚠️ **This is not the Strategy pattern**, and interviewers do probe the
+difference. Both hold an interface reference, but:
+
+| | This (DIP + DI) | [Strategy](../04-Design-Patterns/Behavioral/Strategy/notes.md) |
+|---|---|---|
+| What the interface represents | A **dependency** — a collaborator that does a job (persistence, email, clock) | An **algorithm** — one of several interchangeable ways to compute the same thing |
+| How many implementations at runtime | Usually one per environment (SQL in prod, in-memory in tests) | Several, meaningfully coexisting and chosen per case |
+| Why you'd swap it | To change infrastructure or isolate a test | To get different *business behavior* |
+
+`IOrderRepository` is a dependency. `IPricingStrategy` with `Regular`,
+`Premium`, and `Discount` implementations is a Strategy. Depending on an
+interface is necessary for Strategy but nowhere near sufficient —
+**every** Strategy uses DIP, but most DIP is not Strategy.
 
 **Interview tell**: a business-logic class **hard-wiring its own
 infrastructure**, e.g. `private readonly SqlOrderRepository _repo = new();`
@@ -231,8 +246,9 @@ below is the clearest example):
 - **OCP** is frequently served by **Strategy**, **Factory Method**,
   **Decorator**, and **Observer** — all let you add behavior by adding a
   class rather than editing one.
-- **DIP** is served by **Dependency Injection** as a technique, and
-  **Strategy** as a structure.
+- **DIP** is served by **Dependency Injection** as a technique. Strategy
+  *relies on* DIP, but the reverse doesn't hold — see the warning in the
+  DIP section above.
 - **SRP** is served by **Facade** (pulls orchestration out of a bloated
   class) and **Command** (extracts "an action" into its own class).
 - **ISP** shows up whenever you design a **role interface** instead of one

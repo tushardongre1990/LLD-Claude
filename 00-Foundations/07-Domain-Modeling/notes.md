@@ -259,6 +259,68 @@ belong to neither.
 
 ---
 
+## Application Service — orchestration vs domain logic ⭐
+
+A **domain service** holds business *rules* that span entities. An
+**application service** (a.k.a. use case) holds *orchestration*: the
+sequence of steps a single user action requires. They're different jobs
+and mixing them is the most common structural mistake in case studies.
+
+```mermaid
+flowchart TD
+    A[BookTicketUseCase<br/><i>application service</i>] --> B[SeatRepository]
+    A --> C[Show / Seat / Booking<br/><i>domain objects — own their invariants</i>]
+    A --> D[PricingService<br/><i>domain service — business rules</i>]
+    A --> E[IPaymentGateway]
+    A --> F[INotifier]
+```
+
+```csharp
+public class BookTicketUseCase                 // application service
+{
+    public BookingResult Execute(BookingRequest request)
+    {
+        var show = _showRepository.FindById(request.ShowId);
+
+        // The DOMAIN decides whether this is legal and enforces it.
+        // The use case never inspects seat.Status and reasons about it.
+        if (!show.TryHoldSeats(request.SeatIds, request.UserId))
+            return BookingResult.SeatsUnavailable();
+
+        Money total = _pricing.Calculate(show, request.SeatIds); // domain service
+
+        if (!_payments.Charge(request.UserId, total))
+        {
+            show.ReleaseHold(request.SeatIds, request.UserId);   // compensate
+            return BookingResult.PaymentFailed();
+        }
+
+        var booking = show.ConfirmBooking(request.SeatIds, request.UserId);
+        _bookingRepository.Save(booking);
+        _notifier.BookingConfirmed(booking);                     // orchestration
+        return BookingResult.Success(booking);
+    }
+}
+```
+
+**The rule of thumb**: the application service contains *no business
+decisions* — only sequencing, delegation, and translating results. Every
+"is this allowed?" question is answered inside a domain object. If your
+use case is full of `if (seat.Status == ...)`, the rule has leaked out of
+the domain and you're heading for an
+[anemic model](../10-Anti-Patterns/notes.md).
+
+| | Domain Service | Application Service |
+|---|---|---|
+| Contains | Business rules spanning entities | Step sequencing for one use case |
+| Example | `PricingService`, `FareCalculator` | `BookTicketUseCase`, `CheckoutOrder` |
+| Talks to repositories/gateways? | No | Yes — that's its job |
+| Would it change if we swapped the UI or database? | No | Possibly |
+
+Note this is also what a [Facade](../04-Design-Patterns/Structural/Facade/notes.md)
+often turns out to be in practice — one entry point that sequences a
+subsystem without owning its rules.
+
 ## Repository
 
 An abstraction over persistence: to the domain, it looks like an
@@ -294,11 +356,13 @@ For "design a parking lot":
 | Aggregate roots? | `ParkingLot` (owns floors → spots), `Ticket` |
 | Invariants? | A spot holds ≤ 1 vehicle; a ticket has one issue time and at most one exit time; fee ≥ 0 |
 | Domain services? | `FeeCalculator` (spans ticket + pricing rules) |
+| Application services? | `ParkVehicleUseCase`, `ExitAndPayUseCase` |
 | Repositories? | `ITicketRepository` — interface only, in-memory impl |
 
-Running these six questions over any prompt gives you a class diagram
-skeleton in about three minutes, and it's far more systematic than
-"extract the nouns."
+Running these questions over any prompt gives you a class diagram skeleton
+in about three minutes, and it's far more systematic than "extract the
+nouns." Remember the warning at the top: a small design may legitimately
+answer "none" to aggregates, domain services, or repositories.
 
 ---
 

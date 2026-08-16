@@ -37,6 +37,7 @@ as a checklist of patterns to work in.
 | Many peers have **tangled many-to-many references** | [Mediator](Behavioral/Mediator/notes.md) | Route interaction through one coordinator |
 | You need to traverse a **custom collection** without exposing its internals | [Iterator](Behavioral/Iterator/notes.md) | Usually just `IEnumerable<T>` in C# |
 | **Operations** over a stable class hierarchy keep growing | [Visitor](Behavioral/Visitor/notes.md) | New operation = new visitor, no element edits |
+| You must **evaluate expressions** in a small, stable grammar | [Interpreter](Behavioral/Interpreter/notes.md) | One class per grammar rule, evaluated recursively (rarely the best answer — check alternatives first) |
 
 ## Before you commit to a pattern, ask three questions
 

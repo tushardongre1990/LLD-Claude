@@ -47,6 +47,7 @@ var demos = new Dictionary<string, (string Description, Action Run)>(StringCompa
     ["mediator"] = ("Behavioral: peers communicating through a hub", Foundations.Patterns.Behavioral.Mediator.MediatorDemo.Run),
     ["memento"] = ("Behavioral: snapshot and restore without breaking encapsulation", Foundations.Patterns.Behavioral.Memento.MementoDemo.Run),
     ["visitor"] = ("Behavioral: new operations over a stable hierarchy", Foundations.Patterns.Behavioral.Visitor.VisitorDemo.Run),
+    ["interpreter"] = ("Behavioral: evaluating a small grammar recursively", Foundations.Patterns.Behavioral.Interpreter.InterpreterDemo.Run),
 
     // --- Concurrency ---
     ["concurrency"] = ("Concurrency: race condition, lock, optimistic versioning", Foundations.Concurrency.ConcurrencyDemo.Run),

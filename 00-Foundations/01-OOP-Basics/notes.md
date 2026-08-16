@@ -85,11 +85,30 @@ classDiagram
     PaymentProcessor <|.. UpiProcessor
 ```
 
-**Interview signal**: whenever you say "and this could be extended to support
-X later," the mechanism you reach for is abstraction — define an interface
-now, add implementations later without touching existing callers. This is the
-seed of the Open/Closed Principle (see `03-SOLID-Principles`) and of most
-Strategy/Factory pattern usage in case studies.
+**Interview signal**: abstraction is the mechanism that lets you add a new
+implementation without touching existing callers. It's the seed of the
+Open/Closed Principle (see
+[`../03-SOLID-Principles/notes.md`](../03-SOLID-Principles/notes.md)) and of
+most Strategy/Factory usage in case studies.
+
+⚠️ **But "X could vary someday" is not a reason to add an interface.**
+Abstraction has a real cost — an extra file, an indirection, and a signal
+to readers that the design anticipates variation. Apply this test:
+
+```mermaid
+flowchart TD
+    A[This could vary later] --> B{Does the variation exist<br/>in the requirements now,<br/>or is it explicitly planned?}
+    B -->|No| C[Keep it concrete.<br/>Extract the interface when<br/>the second case actually arrives]
+    B -->|Yes| D[Isolate the variation behind<br/>an interface / polymorphism]
+```
+
+One implementation and no stated second case → write the concrete class.
+The refactor later is cheap and your IDE does it for you. This is YAGNI,
+and it's covered in full in
+[`../06-Core-Design-Principles/notes.md`](../06-Core-Design-Principles/notes.md)
+and [`../10-Anti-Patterns/notes.md`](../10-Anti-Patterns/notes.md) —
+"premature abstraction" is the anti-pattern candidates most often commit
+while trying to look sophisticated.
 
 ### 3.3 Inheritance
 

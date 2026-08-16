@@ -48,6 +48,7 @@ that they're used.
 | [Mediator](Behavioral/Mediator/notes.md) | Behavioral | Centralize chatty many-to-many object communication | Chat room, air traffic control tower |
 | [Memento](Behavioral/Memento/notes.md) | Behavioral | Capture/restore an object's internal state | Undo in a text editor, game save state |
 | [Visitor](Behavioral/Visitor/notes.md) | Behavioral | Add new operations over a class hierarchy without editing it | Compiler AST operations, export-to-format |
+| [Interpreter](Behavioral/Interpreter/notes.md) | Behavioral | Represent a grammar and evaluate sentences in it | Expression evaluator, simple rule DSL |
 
 ## The three families, one sentence each
 
@@ -76,7 +77,7 @@ a case study:
 |---|---|---|
 | **A — know cold** | Strategy, Factory (Simple/Method), Observer, State, Decorator, Builder, Adapter, Facade, Command | Can design with it, code it from memory, and justify it against alternatives |
 | **B — understand & implement** | Singleton, Abstract Factory, Composite, Proxy, Chain of Responsibility, Mediator, Memento, Template Method | Can explain the structure and write it with a moment's thought |
-| **C — recognize & explain** | Prototype, Flyweight, Bridge, Iterator, Visitor | Can define it, name a use case, and recognize when someone else applies it |
+| **C — recognize & explain** | Prototype, Flyweight, Bridge, Iterator, Visitor, Interpreter | Can define it, name a use case, and recognize when someone else applies it |
 
 Learn Tier A first — it covers the large majority of what actually comes up
 in case studies. Under the just-in-time approach (see

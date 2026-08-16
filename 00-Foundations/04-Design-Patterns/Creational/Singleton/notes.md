@@ -57,10 +57,44 @@ how would you fix it?"). Fixes, in order of how interviewers like to see it:
 
 See `Singleton.cs` for all three implemented side by side.
 
+### The distinction that actually catches people out ⭐
+
+> **Thread-safe creation ≠ thread-safe object.**
+
+`Lazy<T>` guarantees the instance is *constructed* exactly once. It says
+**nothing** about whether that instance's state is safe to use from
+multiple threads:
+
+```csharp
+public sealed class LazyParkingLot
+{
+    private static readonly Lazy<LazyParkingLot> _instance = new(() => new());
+
+    private readonly List<string> _activeTickets = new();
+
+    // Singleton creation is thread-safe. THIS METHOD IS NOT.
+    // Two threads calling it concurrently can corrupt the List.
+    public void IssueTicket(string id) => _activeTickets.Add(id);
+}
+```
+
+Because a Singleton is by definition shared across the whole application,
+its mutable state is shared by every thread — so it needs synchronization
+(a `lock`, or a concurrent collection) *in addition to* safe
+initialization. Singletons make this worse than ordinary objects, not
+better, which is part of the case against reaching for them.
+
+If an interviewer asks "is your Singleton thread-safe?", answer **both**
+halves: safe creation via `Lazy<T>`, and safe state via locking around the
+mutable members. Answering only the first half is the expected mistake.
+See [`../../../08-Concurrency/notes.md`](../../../08-Concurrency/notes.md).
+
 ## Interview variations
 
-- "Is your Singleton thread-safe? Prove it." → walk through the race
-  condition, then show `Lazy<T>` or double-checked locking.
+- "Is your Singleton thread-safe? Prove it." → walk through the
+  construction race, show `Lazy<T>` or double-checked locking, **then**
+  volunteer the second half: the instance's mutable state needs its own
+  locking. Covering only creation is the expected half-answer.
 - "How would you unit test a class that depends on a Singleton?" → inject an
   interface instead of calling `GetInstance()` directly inside the
   dependent class; the Singleton can still enforce "one instance" at the

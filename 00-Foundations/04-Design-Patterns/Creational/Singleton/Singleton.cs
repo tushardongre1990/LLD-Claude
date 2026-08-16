@@ -27,6 +27,11 @@ public sealed class EagerParkingLot
 }
 
 // 3. Lazy<T> — thread-safe AND lazy. The idiomatic modern C# approach.
+//
+// ⚠️ CRITICAL DISTINCTION: Lazy<T> guarantees the instance is CREATED
+//    exactly once. It says nothing about whether that instance's STATE is
+//    safe to use from multiple threads. Those are two separate problems,
+//    and conflating them is a classic interview trap.
 public sealed class LazyParkingLot
 {
     private static readonly Lazy<LazyParkingLot> _instance = new(() => new LazyParkingLot());
@@ -34,9 +39,29 @@ public sealed class LazyParkingLot
 
     public static LazyParkingLot GetInstance() => _instance.Value;
 
+    // BROKEN under concurrency, despite the Singleton itself being
+    // thread-safe: List<T> is not safe for concurrent writes. Two threads
+    // calling IssueTicket at once can corrupt the list or lose an entry.
+    private readonly List<string> _unsafeTickets = new();
+    public void IssueTicketUnsafe(string ticketId) => _unsafeTickets.Add(ticketId);
+
+    // FIXED: the shared mutable state needs its own synchronization,
+    // entirely separate from how the instance was created.
+    private readonly object _lock = new();
     private readonly List<string> _activeTickets = new();
-    public void IssueTicket(string ticketId) => _activeTickets.Add(ticketId);
-    public int ActiveTicketCount => _activeTickets.Count;
+
+    public void IssueTicket(string ticketId)
+    {
+        lock (_lock)
+        {
+            _activeTickets.Add(ticketId);
+        }
+    }
+
+    public int ActiveTicketCount
+    {
+        get { lock (_lock) { return _activeTickets.Count; } }
+    }
 }
 
 // 4. Double-checked locking — manual thread-safe lazy init, for contexts

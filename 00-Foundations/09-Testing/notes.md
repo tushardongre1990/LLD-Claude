@@ -111,6 +111,7 @@ For each case study, this checklist gives you meaningful coverage fast:
 | **State transitions** | Legal ones succeed, illegal ones throw |
 | **Polymorphic behavior** | Each vehicle type computes its own fee |
 | **Extension point** | A new strategy works without modifying existing classes |
+| **Failure paths** | Payment fails after the seat was held → is the seat released? |
 
 That last row is worth calling out: a test that **adds a new
 implementation and asserts nothing else changed** is a *test of your OCP
@@ -128,6 +129,39 @@ forces callers into a race, or that you never defined what happens at
 capacity.
 
 ---
+
+## Test the failure paths, not just the happy path
+
+The most under-tested area in candidate designs, and the one that most
+often exposes a design flaw. For any multi-step operation, ask what
+happens when step N fails after steps 1..N-1 succeeded:
+
+| Scenario | The question it forces |
+|---|---|
+| Seats held, payment fails | Are the seats released, or leaked forever? |
+| Payment succeeds, booking save fails | Did the customer pay for nothing? |
+| Notification fails, booking succeeded | Does the whole operation fail? (It shouldn't) |
+| A dependency throws | Does state stay consistent, or half-updated? |
+
+```csharp
+[Fact]
+public void HeldSeats_AreReleased_WhenPaymentFails()
+{
+    var payments = new AlwaysFailingPaymentGateway(); // a Fake
+    var useCase = new BookTicketUseCase(show, payments, repo, notifier);
+
+    var result = useCase.Execute(new BookingRequest(showId, ["A1"], userId));
+
+    Assert.False(result.Succeeded);
+    Assert.True(show.IsSeatAvailable("A1")); // the point of the test
+}
+```
+
+Writing this test is how you *discover* you needed the compensating
+release in the first place — which is exactly the bug the concurrency
+notes' `TryBookAll` example had. Note also the distinction it forces:
+notification failing should **not** fail the booking, while payment
+failing must. Those are design decisions the test makes you state.
 
 ## Example: testing the State pattern
 
