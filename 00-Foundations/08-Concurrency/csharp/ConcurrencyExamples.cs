@@ -1,3 +1,10 @@
+// Illustrates notes.md — every section of the concurrency chapter.
+//   dotnet run --project Runner concurrency
+//
+// Read the notes alongside this file: the section numbers below match its
+// headings. Several examples are deliberately broken — the class names say
+// which (Unsafe*, *DeadlockProne, *Unsafe methods).
+
 using System.Collections.Concurrent;
 
 namespace Foundations.Concurrency;
@@ -316,15 +323,41 @@ public static class ConcurrencyDemo
 {
     public static void Run()
     {
-        // Demonstrate the race: many threads hammering an unsafe seat.
-        var unsafeSeat = new UnsafeSeat();
-        Parallel.For(0, 1000, i =>
+        // Demonstrate the race — and, just as importantly, how RARELY it
+        // fires. A single run almost always looks fine: the first thread
+        // sets _bookedBy within nanoseconds, so the check-then-act window
+        // is tiny. Repeat the experiment to prove the bug is really there.
+        //
+        // This intermittency IS the lesson. A one-shot run, or a unit test
+        // at low contention, would have reported success and taught you
+        // nothing. Never conclude "no race" from a green test.
+        const int trials = 200;
+        int trialsWithMultipleWinners = 0;
+
+        for (int t = 0; t < trials; t++)
         {
-            if (unsafeSeat.IsAvailable)
-                unsafeSeat.Book($"user-{i}");
-        });
-        Console.WriteLine($"Unsafe seat ended up owned by: {unsafeSeat.BookedBy} " +
-                          "(many threads believed they had won)");
+            var unsafeSeat = new UnsafeSeat();
+            int believedTheyWon = 0;
+
+            Parallel.For(0, 1000, i =>
+            {
+                if (unsafeSeat.IsAvailable)
+                {
+                    Interlocked.Increment(ref believedTheyWon);
+                    unsafeSeat.Book($"user-{i}");
+                }
+            });
+
+            if (believedTheyWon > 1)
+                trialsWithMultipleWinners++;
+        }
+
+        Console.WriteLine(
+            $"Unsafe seat: {trialsWithMultipleWinners}/{trials} trials handed the " +
+            "same seat to more than one user.");
+        Console.WriteLine(
+            "  (Usually a low number — the race is real but intermittent, which is " +
+            "exactly why check-then-act bugs survive testing and surface in prod.)");
 
         // The safe version: exactly one winner, guaranteed.
         var safeSeat = new SafeSeat("A-42");
@@ -369,6 +402,20 @@ public static class ConcurrencyDemo
         Console.WriteLine($"TryBookAll succeeded: {ok}; " +
                           $"A-1 owner: {free.BookedBy ?? "<released>"}, " +
                           $"B-2 owner: {alsoFree.BookedBy ?? "<released>"}");
+
+        // Concurrent collection: TryAdd is atomic, so exactly one caller
+        // wins the same key. Switch this to RegisterUnsafe and the race
+        // becomes INVISIBLE — still one entry, but the losers silently
+        // overwrote each other and nothing can report a winner.
+        var registry = new TicketRegistry();
+        int registered = 0;
+        Parallel.For(0, 500, i =>
+        {
+            if (registry.Register("T-1", $"user-{i}"))
+                Interlocked.Increment(ref registered);
+        });
+        Console.WriteLine($"TryAdd winners: {registered} (always exactly 1), " +
+                          $"entries: {registry.Count}");
 
         // Deadlock avoidance: consistent lock ordering under contention.
         var acc1 = new Account("ACC-1", 1000m);

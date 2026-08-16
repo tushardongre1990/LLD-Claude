@@ -10,6 +10,19 @@ That question appears in Movie Booking, Parking Lot, ATM, Amazon Locker,
 Cab Booking, Hotel, Airline — nearly every case study. This page covers
 exactly enough to answer it well, and no more.
 
+> **How to read this chapter.** Every section is self-contained: the broken
+> version, the fix, and the command to run both. One file backs the whole
+> page — [`csharp/ConcurrencyExamples.cs`](csharp/ConcurrencyExamples.cs),
+> runnable with `dotnet run --project Runner concurrency`.
+>
+> ⚠️ **Do the Try-it prompts here more than anywhere else in the vault** —
+> but expect the opposite of what you'd guess. The races in this chapter
+> mostly *don't* reproduce on a single run; the broken seat below survives
+> ~97% of 1,000-thread trials looking perfectly correct. That's precisely
+> what makes concurrency bugs dangerous, and why a passing test is not
+> evidence of safety. These examples have already shipped two real bugs that
+> passing tests hid.
+
 ---
 
 ## 1. Race condition — the thing you must be able to explain
@@ -42,9 +55,32 @@ if (seat.IsAvailable)      // ← Thread B can run between these
     seat.Book(userId);     // ← two lines
 ```
 
-Note this is the same shape as the naive Singleton
-(`if (_instance == null) _instance = new(...)`) and the naive lazy Proxy —
-once you recognize check-then-act, you spot it everywhere.
+Note this is the same shape as the naive
+[Singleton](../04-Design-Patterns/Creational/Singleton/notes.md)
+(`if (_instance == null) _instance = new(...)`) and the naive lazy
+[Proxy](../04-Design-Patterns/Structural/Proxy/notes.md) — once you
+recognize check-then-act, you spot it everywhere.
+
+📄 `UnsafeSeat` in [`csharp/ConcurrencyExamples.cs`](csharp/ConcurrencyExamples.cs) · `dotnet run --project Runner concurrency`
+
+> **Try it — and note how hard the bug is to catch.** The demo runs the
+> 1,000-thread booking **200 times** and reports how many of those trials
+> handed the seat to more than one user. Measured on this machine, that's
+> typically **only ~5 trials out of 200 — around 2–3%** (your number will
+> vary with core count and load).
+>
+> Run it once and it almost certainly looks fine. The first thread sets
+> `_bookedBy` within nanoseconds, so the check-then-act window is tiny — but
+> it is real, and at production scale "1 in 100" is a double-booked seat every
+> few minutes.
+>
+> Two things follow, and both are worth saying in an interview:
+> 1. **A green test proves nothing about a race.** You cannot conclude
+>    "no race" from a passing run; you can only conclude "didn't hit it."
+> 2. **A varying winner is not evidence of the bug.** The owner changes from
+>    run to run even when only one thread ever passed the check — that's just
+>    scheduling. You have to count how many threads *believed* they won, which
+>    is why the demo does exactly that.
 
 ---
 
@@ -75,6 +111,18 @@ Key points to state out loud:
   to check first — **the atomic operation is the API**. If callers can
   still ask "is it free?" and then act, you've handed them the race back.
   This is Tell-Don't-Ask applied to concurrency.
+
+In the code, `SafeSeat` has no public `IsAvailable` at all — only `TryBook`,
+`Release`, and a `BookedBy` that reads under the lock. The absence is
+deliberate design, not an oversight.
+
+📄 `SafeSeat` in [`csharp/ConcurrencyExamples.cs`](csharp/ConcurrencyExamples.cs)
+
+> **Try it:** add `public bool IsAvailable => _bookedBy is null;` to
+> `SafeSeat` and use it check-then-act style from the demo. You've
+> reintroduced the exact bug, on a class whose internals are still perfectly
+> locked. Locking the state doesn't save you if the API invites callers to
+> race — **the atomic operation has to be the public method.**
 
 ---
 
@@ -132,7 +180,19 @@ lock (first.Lock) { lock (second.Lock) { ... } }
 ```
 
 Both versions are in
-[`ConcurrencyExamples.cs`](csharp/ConcurrencyExamples.cs) (`LockOrdering`).
+[`ConcurrencyExamples.cs`](csharp/ConcurrencyExamples.cs) (`LockOrdering`),
+as `TransferDeadlockProne` and `Transfer`.
+
+> **Try it — this one actually hangs, which is the point.** In
+> `ConcurrencyDemo.Run()`, swap `LockOrdering.Transfer` for
+> `LockOrdering.TransferDeadlockProne`. The demo runs 2,000 transfers in
+> opposing directions and will freeze, usually within the first few. Kill it
+> with `Ctrl+C`, then switch back and watch the ordered version complete and
+> conserve the total balance.
+>
+> A hang is a *good* failure mode to have seen once — it looks nothing like a
+> crash or a wrong number, which is why deadlock in production is so often
+> first reported as "the service just stopped responding."
 
 ### Multi-resource booking without simultaneous locks
 
@@ -156,6 +216,20 @@ still observe the intermediate state where you briefly held seats 1 and 2.
 Saying that distinction out loud is a strong senior signal — and it's
 exactly why real systems use the Held-with-timeout model in §6 or a
 database transaction instead.
+
+📄 `SeatBooking.TryBookAll` in [`csharp/ConcurrencyExamples.cs`](csharp/ConcurrencyExamples.cs)
+
+> **Try it:** replace the `taken.Release(userId)` line with a
+> `Console.WriteLine($"Rolling back {taken.Id}")`. Every test that checks
+> "did `TryBookAll` return false?" still passes — but the caller now silently
+> owns seats it was told it didn't get.
+>
+> This is not hypothetical: **that was a real bug in this file**, and the
+> original test missed it because it only ever failed on the *first* seat, so
+> the rollback path never ran. `Release` also refuses to free a seat owned by
+> someone else — try weakening that check and you get a worse bug than the one
+> rollback was added to fix. Rollback paths need tests that actually reach
+> them.
 
 ---
 
@@ -200,10 +274,39 @@ them.* Choose by expected contention.
 
 ### Implementing it correctly
 
-The version check and the state write must be **one atomic step**. If the
-version lives in one field and the data in another, there's a window
-between checking and writing where someone else can commit — a lost
-update, which is the exact bug OCC exists to prevent.
+The code has **two** versioned classes, and the difference between them is
+the actual lesson.
+
+`VersionedSeat` is the simple one — separate `_version` and `_bookedBy`
+fields:
+
+```csharp
+public bool TryBook(string userId, int expectedVersion)
+{
+    // (a) optimistic check — did anything change since we read?
+    if (Volatile.Read(ref _version) != expectedVersion)
+        return false;
+
+    // (b) domain invariant — exactly one thread can flip null -> userId.
+    //     MUST be a CAS. Writing `if (_bookedBy is null) _bookedBy = ...`
+    //     reintroduces check-then-act between (a) and (b).
+    if (Interlocked.CompareExchange(ref _bookedBy, userId, null) is not null)
+        return false;
+
+    Interlocked.Increment(ref _version);
+    return true;
+}
+```
+
+This is correct **only because a seat goes unbooked → booked exactly once**,
+so the CAS on `_bookedBy` is itself what picks the winner. The version check
+and the state change are *not* one atomic step. Add a second mutable field —
+price, status, cancellation — and the shape breaks: there's a window between
+checking the version and writing, where someone else can commit. That's a
+lost update, the exact bug OCC exists to prevent.
+
+Knowing *why the simple version happens to work* — and exactly when it stops
+working — is a much stronger answer than reciting the general solution.
 
 The general fix is to put **all mutable state in one immutable object**
 and swap the whole reference atomically:
@@ -225,9 +328,36 @@ WHERE id = @id AND version = @expectedVersion   -- 0 rows affected = conflict
 
 Callers wrap it in a **retry loop**: re-read, recompute, try again. Note
 you should only retry on a *concurrency* conflict — if the seat is
-genuinely already booked, retrying can't help and you should fail fast.
-`VersionedSeatState` in
-[`ConcurrencyExamples.cs`](csharp/ConcurrencyExamples.cs) shows both.
+genuinely already booked, retrying can't help and you should fail fast:
+
+```csharp
+for (int attempt = 0; attempt < maxAttempts; attempt++)
+{
+    SeatState current = Current;
+
+    if (current.BookedBy is not null)
+        return false;   // domain rule: retrying cannot help. Fail fast.
+
+    var next = current with { BookedBy = userId, Version = current.Version + 1 };
+
+    if (TryUpdate(current, next))
+        return true;
+                        // lost the race: re-read and recompute
+}
+```
+
+📄 `VersionedSeat` and `VersionedSeatState` in [`csharp/ConcurrencyExamples.cs`](csharp/ConcurrencyExamples.cs)
+
+> **Try it:** add a `Price` to `VersionedSeat` and a `TryChangePrice` that
+> bumps `_version`. Now run price changes and bookings concurrently and check
+> whether a booking can commit against a version that changed between its
+> check and its CAS. Then do the same on `VersionedSeatState`, where the whole
+> state swaps in one `CompareExchange`, and watch the problem not exist.
+>
+> Second one, quicker: delete the `if (current.BookedBy is not null)` fail-fast
+> above. The retry loop now spins `maxAttempts` times on a seat that will never
+> become free. Distinguishing "conflict, retry" from "denied, stop" is a
+> correctness *and* a performance point.
 
 ---
 
@@ -274,8 +404,30 @@ Rules of thumb worth saying:
   compound logic.** `if (!dict.ContainsKey(k)) dict.Add(k, v)` is still a
   race; `dict.TryAdd(k, v)` is not.
 
-See [`ConcurrencyExamples.cs`](csharp/ConcurrencyExamples.cs) for the
-broken and fixed versions side by side.
+That last rule has both versions in the code:
+
+```csharp
+// WRONG: check-then-act, even though the collection IS thread-safe.
+public void RegisterUnsafe(string id, string owner)
+{
+    if (!_tickets.ContainsKey(id))
+        _tickets[id] = owner;
+}
+
+// RIGHT: one atomic operation the collection guarantees for you.
+public bool Register(string id, string owner) => _tickets.TryAdd(id, owner);
+```
+
+📄 `TicketRegistry` in [`csharp/ConcurrencyExamples.cs`](csharp/ConcurrencyExamples.cs)
+
+> **Try it:** the demo registers the same ticket id from 500 threads and
+> reports exactly one winner. Now switch it to `RegisterUnsafe` — and notice
+> the failure is *invisible*: you still end up with one entry, because the
+> losers silently overwrote each other. It can't even tell you a winner.
+>
+> A race that produces a plausible-looking result is far more dangerous than
+> one that crashes, and "thread-safe collection" is the phrase that most often
+> lulls people into it.
 
 ---
 
@@ -295,6 +447,34 @@ and API design together.
 **Scope control**: if the interviewer says "assume single-threaded," take
 it and move on — but say you noticed. Recognizing a shared-state hazard and
 correctly scoping it out is still a win.
+
+---
+
+## Recap — the code, and what each class is evidence of
+
+Everything on this page lives in one file:
+[`csharp/ConcurrencyExamples.cs`](csharp/ConcurrencyExamples.cs), run with
+`dotnet run --project Runner concurrency`.
+
+| § | Class | The claim it demonstrates |
+|---|---|---|
+| 1 | `UnsafeSeat` | Check-then-act loses the seat under contention — and *only* under contention |
+| 2 | `SafeSeat` | The atomic operation is the API; there is deliberately no public `IsAvailable` |
+| 4 | `SeatBooking` | Compensating rollback restores the end state, but not atomicity |
+| 4 | `LockOrdering` | Deadlock needs two locks held at once; consistent ordering removes the cycle |
+| 5 | `VersionedSeat` | A one-shot claim can get away with separate version/state fields |
+| 5 | `VersionedSeatState` | The general fix: all mutable state in one record, swapped by a single CAS |
+| 7 | `TicketRegistry` | A thread-safe collection makes operations atomic, not your compound logic |
+
+Tests are in
+[`Tests/LLD.Foundations.Tests/ConcurrencyTests.cs`](../../Tests/LLD.Foundations.Tests/ConcurrencyTests.cs)
+— worth reading for the comment on `TryBookAll_ReleasesSeatsAlreadyTaken`,
+which documents a real bug this file shipped and the reason the original test
+failed to catch it.
+
+**Before moving on**, check you can answer without looking: where exactly is
+the critical section in `SafeSeat`, and why does `VersionedSeat` get away with
+something `VersionedSeatState` has to do properly?
 
 ---
 
