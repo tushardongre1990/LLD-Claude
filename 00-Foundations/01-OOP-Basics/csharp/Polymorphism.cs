@@ -1,3 +1,6 @@
+// Illustrates notes.md §3.4 — Polymorphism.
+//   dotnet run --project Runner polymorphism
+
 namespace Foundations.OopBasics;
 
 // Polymorphism: iterate a list of the base type; the correct override runs

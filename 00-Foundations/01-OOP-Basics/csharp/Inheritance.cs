@@ -1,3 +1,6 @@
+// Illustrates notes.md §3.3 — Inheritance.
+//   dotnet run --project Runner inheritance
+
 namespace Foundations.OopBasics;
 
 // Inheritance: genuine "is-a" taxonomy. Vehicle holds shared state + shared

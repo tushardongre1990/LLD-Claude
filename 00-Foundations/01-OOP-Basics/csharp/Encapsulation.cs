@@ -1,3 +1,6 @@
+// Illustrates notes.md §3.1 — Encapsulation.
+//   dotnet run --project Runner encapsulation
+
 namespace Foundations.OopBasics;
 
 // Encapsulation: state is private, all mutation goes through methods that

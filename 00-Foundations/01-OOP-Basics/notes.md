@@ -1,5 +1,12 @@
 # OOP Basics for LLD Interviews
 
+> **How to read this chapter.** Every concept below is self-contained: diagram,
+> then the actual code, then the command to run it. Read straight through —
+> you only need to open a `.cs` file when you want to *change* something.
+> Each section ends with a **Try it** prompt; doing those is where the learning
+> is. The diagrams and the snippets use the same names as the code, so nothing
+> needs re-mapping in your head.
+
 ## 1. What is Low Level Design, and why does it care about OOP?
 
 - **HLD (High Level Design)**: system-wide — services, databases, load balancers,
@@ -59,12 +66,42 @@ field isn't exposed; they can only call `Withdraw()`, which enforces the rule.
 ```mermaid
 classDiagram
     class BankAccount {
-        -decimal balance
+        -decimal _balance
         +Deposit(amount) void
         +Withdraw(amount) bool
         +GetBalance() decimal
     }
 ```
+
+```csharp
+public class BankAccount
+{
+    private decimal _balance;                  // no caller can touch this
+
+    public decimal GetBalance() => _balance;
+
+    public bool Withdraw(decimal amount)
+    {
+        if (amount <= 0)
+            throw new ArgumentException("Withdrawal amount must be positive.");
+
+        if (amount > _balance)
+            return false;   // invariant enforced HERE, not by the caller
+
+        _balance -= amount;
+        return true;
+    }
+}
+```
+
+The constructor rejects a negative opening balance too, so a `BankAccount`
+never exists in an invalid state — not even for an instant.
+
+📄 [`csharp/Encapsulation.cs`](csharp/Encapsulation.cs) · `dotnet run --project Runner encapsulation`
+
+> **Try it:** make `_balance` public and set it to `-500` from `Run()`. That
+> compiles — which is exactly the point. Now put it back and try to reach a
+> negative balance through `Deposit`/`Withdraw` only. You can't.
 
 **Interview signal**: fields are `private`, mutation happens through methods
 that enforce invariants. If you catch yourself writing public mutable fields
@@ -78,7 +115,7 @@ about the concrete implementation.
 
 ```mermaid
 classDiagram
-    class PaymentProcessor {
+    class IPaymentProcessor {
         <<interface>>
         +Pay(amount) bool
     }
@@ -88,9 +125,45 @@ classDiagram
     class UpiProcessor {
         +Pay(amount) bool
     }
-    PaymentProcessor <|.. CreditCardProcessor
-    PaymentProcessor <|.. UpiProcessor
+    class Checkout {
+        -IPaymentProcessor _processor
+        +CompleteOrder(total) bool
+    }
+    IPaymentProcessor <|.. CreditCardProcessor
+    IPaymentProcessor <|.. UpiProcessor
+    Checkout --> IPaymentProcessor : depends on the contract
 ```
+
+`Checkout` is the part that matters — it is the *caller*, and it never learns
+which processor it got:
+
+```csharp
+public interface IPaymentProcessor
+{
+    bool Pay(decimal amount);
+}
+
+// Knows nothing about credit cards or UPI — only the contract.
+// Add a new IPaymentProcessor later and this class is unchanged.
+public class Checkout
+{
+    private readonly IPaymentProcessor _processor;
+
+    public Checkout(IPaymentProcessor processor)
+    {
+        _processor = processor;
+    }
+
+    public bool CompleteOrder(decimal total) => _processor.Pay(total);
+}
+```
+
+📄 [`csharp/Abstraction.cs`](csharp/Abstraction.cs) · `dotnet run --project Runner abstraction`
+
+> **Try it:** swap `new CreditCardProcessor()` for `new UpiProcessor()` in
+> `Run()`, then add a third processor (`class WalletProcessor : IPaymentProcessor`)
+> and pass that instead. Note what you *didn't* have to edit: `Checkout`.
+> That untouched class is the whole return on the abstraction.
 
 **Interview signal**: abstraction is the mechanism that lets you add a new
 implementation without touching existing callers. It's the seed of the
@@ -126,15 +199,54 @@ members and optionally overriding behavior.
 classDiagram
     class Vehicle {
         <<abstract>>
-        #string licensePlate
-        +StartEngine() void
+        +string LicensePlate
+        +DisplayPlate() void
         +CalculateParkingFee(hours)* decimal
     }
-    class Car
-    class Motorcycle
+    class Car {
+        +CalculateParkingFee(hours) decimal
+    }
+    class Motorcycle {
+        +CalculateParkingFee(hours) decimal
+    }
     Vehicle <|-- Car
     Vehicle <|-- Motorcycle
 ```
+
+```csharp
+public abstract class Vehicle
+{
+    public string LicensePlate { get; }
+
+    // Shared behavior — written once, inherited by every subtype.
+    public void DisplayPlate() => Console.WriteLine($"Plate: {LicensePlate}");
+
+    // Each subtype MUST supply its own pricing rule. `abstract` = no default.
+    public abstract decimal CalculateParkingFee(int hours);
+}
+
+public class Car : Vehicle
+{
+    public override decimal CalculateParkingFee(int hours) => 20m + 10m * hours;
+}
+
+public class Motorcycle : Vehicle
+{
+    public override decimal CalculateParkingFee(int hours) => 10m + 5m * hours;
+}
+```
+
+Note what earns the hierarchy here: `DisplayPlate()` is *shared behavior*, not
+just a shared field. That is the bar inheritance has to clear.
+
+📄 [`csharp/Inheritance.cs`](csharp/Inheritance.cs) · `dotnet run --project Runner inheritance`
+
+> **Try it:** add `class Truck : Vehicle` without overriding
+> `CalculateParkingFee`. The compiler refuses — an abstract member is a
+> contract the base class forces every subtype to honour. Then delete
+> `abstract` and give it a default body: now `Truck` silently inherits car-ish
+> pricing. Which of those two failure modes would you rather have in an
+> interview? (The compile error. Always.)
 
 **Interview trap**: inheritance is overused by candidates who reach for it by
 default. Prefer inheritance only for genuine "is-a" hierarchies with shared
@@ -151,9 +263,32 @@ dispatch. There's also **compile-time polymorphism** (method overloading),
 which is a minor variant.
 
 ```csharp
-Vehicle v = isMotorcycle ? new Motorcycle() : new Car();
-decimal fee = v.CalculateParkingFee(3); // resolves to the right override at runtime
+var vehicles = new List<Vehicle>
+{
+    new Car("KA-01-1111"),
+    new Motorcycle("KA-01-2222"),
+    new Car("KA-01-3333"),
+};
+
+foreach (var vehicle in vehicles)
+{
+    // Declared type is Vehicle; the ACTUAL type decides which override runs.
+    decimal fee = vehicle.CalculateParkingFee(hours: 2);
+    Console.WriteLine($"{vehicle.LicensePlate}: {fee:C}");
+}
+
+// Compile-time polymorphism (overloading), for contrast — the compiler picks
+// the method by argument type, and it's a far weaker tool.
+private static int Add(int a, int b) => a + b;
+private static double Add(double a, double b) => a + b;
 ```
+
+📄 [`csharp/Polymorphism.cs`](csharp/Polymorphism.cs) · `dotnet run --project Runner polymorphism`
+
+> **Try it:** rewrite that loop the bad way — `if (vehicle is Car) ... else if
+> (vehicle is Motorcycle) ...` — and then add a `Truck`. Count the places you
+> have to edit. That count is the argument for polymorphism, and it's the
+> answer to give when an interviewer asks why you avoided a type switch.
 
 **Interview signal**: this is exactly what lets you write
 `foreach (var shape in shapes) shape.Draw();` without an `if/else` chain on
@@ -174,25 +309,81 @@ enum field, that's almost always a sign you should be using polymorphism
 ```mermaid
 classDiagram
     class Car {
-        -Engine engine
+        -IEngine _engine
+        -ITransmission _transmission
         +Start() void
     }
-    class Engine {
+    class IEngine {
         <<interface>>
         +Ignite() void
     }
+    class ITransmission {
+        <<interface>>
+        +Engage() void
+    }
     class PetrolEngine
     class ElectricEngine
-    Car o-- Engine : composition
-    Engine <|.. PetrolEngine
-    Engine <|.. ElectricEngine
+    class ManualTransmission
+    class AutomaticTransmission
+    Car o-- IEngine : has-a
+    Car o-- ITransmission : has-a
+    IEngine <|.. PetrolEngine
+    IEngine <|.. ElectricEngine
+    ITransmission <|.. ManualTransmission
+    ITransmission <|.. AutomaticTransmission
 ```
 
-A `Car` composed with an `Engine` interface can become an `ElectricCar` just
-by injecting a different `Engine` implementation — no class hierarchy change
-needed. This composition-first instinct is what separates strong LLD answers
-from ones that end up with a rigid, deep inheritance tree by the 30-minute
-mark.
+```csharp
+public interface IEngine { void Ignite(); }
+public interface ITransmission { void Engage(); }
+
+// ONE concrete Car. It delegates the parts that vary.
+public class Car
+{
+    private readonly string _model;
+    private readonly IEngine _engine;
+    private readonly ITransmission _transmission;
+
+    public Car(string model, IEngine engine, ITransmission transmission)
+    {
+        _model = model;
+        _engine = engine;
+        _transmission = transmission;
+    }
+
+    public void Start()
+    {
+        _engine.Ignite();
+        _transmission.Engage();
+    }
+}
+
+// Same Car class every time — only the injected parts differ.
+new Car("Hatchback", new PetrolEngine(),   new ManualTransmission()).Start();
+new Car("City EV",   new ElectricEngine(), new AutomaticTransmission()).Start();
+```
+
+**Why the second axis is in there.** With one axis, inheritance looks fine —
+`PetrolCar` and `ElectricCar`, done. Add transmission and a hierarchy needs
+`PetrolManualCar`, `PetrolAutomaticCar`, `ElectricManualCar`,
+`ElectricAutomaticCar`: 2 × 2 subclasses, then 3 × 3 the moment a third engine
+and a third transmission appear. Composition keeps the axes separate and
+combines them at runtime — 4 small classes cover all four behaviours.
+
+This is not a verdict against inheritance. `Vehicle → Car / Motorcycle` above
+is a genuine taxonomy with shared behaviour and one axis of variation, and a
+hierarchy models it well. Composition earns its keep when the variation lives
+in a *part*, or when the axes multiply.
+
+📄 [`csharp/Composition.cs`](csharp/Composition.cs) · `dotnet run --project Runner composition`
+
+> **Try it:** add a `HybridEngine` and run every engine × transmission
+> combination. You wrote one class and got new behaviours for free. Now sketch
+> the subclass names the inheritance version would have needed — that list is
+> your answer when an interviewer asks "why composition here?"
+
+This composition-first instinct is what separates strong LLD answers from ones
+that end up with a rigid, deep inheritance tree by the 30-minute mark.
 
 ## 5. UML relationship cheat sheet (used constantly in `02-UML-Object-Oriented-Design`)
 
@@ -232,12 +423,25 @@ base (e.g., every `Vehicle` subtype shares a `licensePlate` field and a
 - "What's the difference between overloading and overriding?" (compile-time vs
   runtime polymorphism).
 
-## 8. Code in this folder
+## 8. Recap — the code, and what each file is evidence of
 
-- `csharp/Encapsulation.cs` — `BankAccount` enforcing invariants through methods.
-- `csharp/Abstraction.cs` — `IPaymentProcessor` with two implementations.
-- `csharp/Inheritance.cs` — `Vehicle` → `Car` / `Motorcycle` abstract hierarchy.
-- `csharp/Polymorphism.cs` — runtime dispatch over a `List<Vehicle>`.
+The snippets above are excerpts; these are the full, runnable versions.
 
-Run any of them with `dotnet run --project Runner encapsulation`
-(`abstraction`, `inheritance`, `polymorphism`).
+| § | File | Run | The claim it demonstrates |
+|---|---|---|---|
+| 3.1 | [`csharp/Encapsulation.cs`](csharp/Encapsulation.cs) | `dotnet run --project Runner encapsulation` | A `BankAccount` can't be driven into an invalid state from outside |
+| 3.2 | [`csharp/Abstraction.cs`](csharp/Abstraction.cs) | `dotnet run --project Runner abstraction` | `Checkout` is untouched when a new payment method is added |
+| 3.3 | [`csharp/Inheritance.cs`](csharp/Inheritance.cs) | `dotnet run --project Runner inheritance` | An abstract member forces every subtype to supply its own rule |
+| 3.4 | [`csharp/Polymorphism.cs`](csharp/Polymorphism.cs) | `dotnet run --project Runner polymorphism` | A `List<Vehicle>` prices itself with no type switch |
+| 4 | [`csharp/Composition.cs`](csharp/Composition.cs) | `dotnet run --project Runner composition` | One `Car` class covers every engine × transmission combination |
+
+Tests for all five are in
+[`Tests/LLD.Foundations.Tests/`](../../Tests/LLD.Foundations.Tests/)
+(`OopBasicsTests.cs`, `OopCompositionTests.cs`) — worth reading, since each
+test names the property the pillar is supposed to guarantee. Run them with
+`dotnet test LLD-Claude.slnx`.
+
+**Before moving on to [`02-UML`](../02-UML-Object-Oriented-Design/notes.md)**,
+check you can answer without looking: why is `Checkout` the interesting class
+in the abstraction example, and what would inheritance have cost you in the
+composition example?

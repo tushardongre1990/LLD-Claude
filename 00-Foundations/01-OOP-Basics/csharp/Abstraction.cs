@@ -1,3 +1,6 @@
+// Illustrates notes.md §3.2 — Abstraction.
+//   dotnet run --project Runner abstraction
+
 namespace Foundations.OopBasics;
 
 // Abstraction: callers depend only on the interface, never on which payment
@@ -43,7 +46,7 @@ public static class AbstractionDemo
 {
     public static void Run()
     {
-        var checkout = new Checkout(new UpiProcessor());
+        var checkout = new Checkout(new CreditCardProcessor());
         checkout.CompleteOrder(499.00m);
     }
 }

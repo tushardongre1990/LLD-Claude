@@ -11,6 +11,7 @@ var demos = new Dictionary<string, (string Description, Action Run)>(StringCompa
     ["abstraction"] = ("OOP: depending on an interface, not an implementation", Foundations.OopBasics.AbstractionDemo.Run),
     ["inheritance"] = ("OOP: abstract base class + overrides", Foundations.OopBasics.InheritanceDemo.Run),
     ["polymorphism"] = ("OOP: runtime dispatch over a base-type list", Foundations.OopBasics.PolymorphismDemo.Run),
+    ["composition"] = ("OOP: has-a delegation instead of a subclass per variant", Foundations.OopBasics.Composition.CompositionDemo.Run),
 
     // --- SOLID ---
     ["srp"] = ("SOLID: one reason to change per class", Foundations.Solid.Srp.Fixed.SrpDemo.Run),

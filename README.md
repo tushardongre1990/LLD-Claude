@@ -72,7 +72,7 @@ template are in [`01-Case-Studies/README.md`](01-Case-Studies/README.md).
 
 ```bash
 dotnet build LLD-Claude.slnx          # compile everything
-dotnet test  LLD-Claude.slnx          # run the test suite (37 tests)
+dotnet test  LLD-Claude.slnx          # run the test suite (45 tests)
 dotnet run --project Runner           # list every runnable demo
 dotnet run --project Runner strategy  # run one (state, concurrency, command, ...)
 ```
