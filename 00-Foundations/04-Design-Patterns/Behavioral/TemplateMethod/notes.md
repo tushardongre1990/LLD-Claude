@@ -21,8 +21,11 @@ classDiagram
     class JsonImporter
     DataImporter <|-- CsvImporter
     DataImporter <|-- JsonImporter
-    note for DataImporter "Import() is NOT overridden —\nit calls the steps below in\na fixed order (the 'template')"
 ```
+
+`Import()` is **not** overridden by subclasses. It's the template: it
+calls the steps below it in a fixed order that subclasses cannot reorder
+or skip.
 
 ```csharp
 // The template — fixed sequence, lives once in the base class, never

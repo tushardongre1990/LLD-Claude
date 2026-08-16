@@ -36,7 +36,14 @@ classDiagram
         +Accelerate() void
         +Brake() void
     }
-    note for Vehicle "Class = blueprint.\nAn object is Vehicle v = new Vehicle('KA-01-1234');"
+```
+
+The box above is the **class** — the blueprint. An **object** is what you
+get when you instantiate it:
+
+```csharp
+Vehicle v = new Vehicle("KA-01-1234");   // one object, its own licensePlate and speed
+Vehicle w = new Vehicle("KA-02-5678");   // a second object, independent state
 ```
 
 ## 3. The four pillars

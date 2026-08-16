@@ -21,8 +21,11 @@ classDiagram
         +SaveToDatabase() void
         +PrintReceipt() void
     }
-    note for MarkerBefore "3 reasons to change:\nbilling rules, persistence\ntech, receipt format"
 ```
+
+That class has **three** reasons to change: the billing rules, the
+persistence technology, and the receipt format. Three separate concerns,
+three separate stakeholders, one class.
 
 Fix: split into `FeeCalculator`, `ParkingRepository`, `ReceiptPrinter` — each
 changes for exactly one reason.
@@ -46,7 +49,7 @@ classDiagram
         <<Violation>>
         +Calculate(VehicleType type, hours) decimal
     }
-    note for FeeCalculator "Adding a new VehicleType\nmeans editing this method again"
+    note for FeeCalculator "Every new VehicleType means editing this method again"
 ```
 
 Fix:
@@ -63,7 +66,7 @@ classDiagram
     Vehicle <|-- Car
     Vehicle <|-- Motorcycle
     Vehicle <|-- Truck
-    note for Vehicle "Adding Truck = new class,\nzero edits to existing ones"
+    note for Vehicle "Adding Truck = one new class, zero edits to existing ones"
 ```
 
 **Interview tell**: a `switch`/`if-else if` chain over a type or category
@@ -102,8 +105,11 @@ classDiagram
     }
     class Square
     Rectangle <|-- Square
-    note for Square "Violates LSP: Square's\nsetters have side effects\na Rectangle caller doesn't expect"
 ```
+
+`Square` violates LSP because its setters carry a side effect a
+`Rectangle` caller has no way to anticipate: setting `Width` silently
+changes `Height` too.
 
 Fix: don't force the inheritance. Model both as implementations of a shape
 abstraction with only the behavior they actually share (`Area()`), not
@@ -129,7 +135,7 @@ classDiagram
     }
     class RobotWorker
     IWorker <|.. RobotWorker
-    note for RobotWorker "Forced to implement\nEat()/Sleep() meaninglessly"
+    note for RobotWorker "Forced to implement Eat() and Sleep() meaninglessly"
 ```
 
 Fix: split into `IWorkable`, `IFeedable`, `ISleepable`; `RobotWorker`
@@ -153,7 +159,7 @@ classDiagram
     }
     class SqlDatabase
     ParkingLot --> SqlDatabase : concrete dependency
-    note for ParkingLot "Locked into SQL;\ncan't unit test without a real DB"
+    note for ParkingLot "Locked into SQL; cannot unit test without a real DB"
 ```
 
 Fix:
