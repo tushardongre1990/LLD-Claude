@@ -97,28 +97,65 @@ correct-but-slow, and worth saying you'd start there and refine.
 
 ---
 
-## 4. Deadlock
+## 4. Deadlock and lock ordering
 
-Two threads each hold a lock the other needs.
+Two threads each hold a lock the other needs, and neither can proceed.
 
 ```mermaid
 flowchart LR
-    A[Thread A] -->|holds| L1[Lock: Seat 1]
-    A -->|waits for| L2[Lock: Seat 2]
+    A[Thread A] -->|holds| L1[Lock: Account 1]
+    A -->|waits for| L2[Lock: Account 2]
     B[Thread B] -->|holds| L2
     B -->|waits for| L1
 ```
 
-Happens when booking **multiple** seats at once. The standard fix is
-**lock ordering**: always acquire locks in a globally consistent order
-(e.g. ascending seat ID), so a cycle can't form.
+**The precondition is what people get wrong**: deadlock requires a thread
+to hold **several locks simultaneously**. If every operation takes one
+lock and releases it before taking the next, deadlock is impossible — and
+so lock ordering buys you nothing there. Know this, because "just order
+your locks" applied to code that never holds two at once is a confident
+non-answer.
+
+The classic case that *does* qualify is a transfer between two accounts,
+which must hold both locks to be atomic:
 
 ```csharp
-foreach (var seat in seats.OrderBy(s => s.Id))  // consistent order
-    Monitor.Enter(seat.Lock);
+// DEADLOCK-PRONE: locks in argument order.
+// Transfer(A, B) on one thread and Transfer(B, A) on another can hang.
+lock (from.Lock) { lock (to.Lock) { ... } }
+
+// SAFE: still holds both simultaneously, but always acquires them in a
+// globally consistent order, so no wait cycle can form.
+var (first, second) = string.CompareOrdinal(from.Id, to.Id) < 0
+    ? (from, to) : (to, from);
+lock (first.Lock) { lock (second.Lock) { ... } }
 ```
 
-Mentioning lock ordering unprompted is a strong signal.
+Both versions are in
+[`ConcurrencyExamples.cs`](csharp/ConcurrencyExamples.cs) (`LockOrdering`).
+
+### Multi-resource booking without simultaneous locks
+
+Booking several seats is a *different* problem, because each seat is
+claimed under its own lock, one at a time. There's no deadlock risk —
+but there's also no atomicity. If seat 3 is taken, you must **give back**
+seats 1 and 2 you already claimed:
+
+```csharp
+foreach (var seat in ordered)
+{
+    if (seat.TryBook(userId)) { acquired.Add(seat); continue; }
+    foreach (var taken in acquired) taken.Release(userId);  // compensate
+    return false;
+}
+```
+
+**Be precise about what this is**: a *compensating transaction*, not an
+atomic one. It restores the correct end state, but another thread can
+still observe the intermediate state where you briefly held seats 1 and 2.
+Saying that distinction out loud is a strong senior signal — and it's
+exactly why real systems use the Held-with-timeout model in §6 or a
+database transaction instead.
 
 ---
 
@@ -160,6 +197,37 @@ sequenceDiagram
 
 **The one-liner**: *pessimistic prevents conflicts, optimistic detects
 them.* Choose by expected contention.
+
+### Implementing it correctly
+
+The version check and the state write must be **one atomic step**. If the
+version lives in one field and the data in another, there's a window
+between checking and writing where someone else can commit — a lost
+update, which is the exact bug OCC exists to prevent.
+
+The general fix is to put **all mutable state in one immutable object**
+and swap the whole reference atomically:
+
+```csharp
+public sealed record SeatState(string? BookedBy, decimal Price, int Version);
+
+// One atomic swap of the ENTIRE state — no window, no torn reads.
+return ReferenceEquals(
+    Interlocked.CompareExchange(ref _state, next, expected), expected);
+```
+
+This is the in-memory equivalent of:
+
+```sql
+UPDATE seats SET ... , version = version + 1
+WHERE id = @id AND version = @expectedVersion   -- 0 rows affected = conflict
+```
+
+Callers wrap it in a **retry loop**: re-read, recompute, try again. Note
+you should only retry on a *concurrency* conflict — if the seat is
+genuinely already booked, retrying can't help and you should fail fast.
+`VersionedSeatState` in
+[`ConcurrencyExamples.cs`](csharp/ConcurrencyExamples.cs) shows both.
 
 ---
 

@@ -86,9 +86,34 @@ A `ParkingFloor` has no meaning outside its `ParkingLot`; if the lot is torn
 down, the floors go with it. This is the relationship you reach for most
 often in LLD case studies (`ParkingLot` → `Floor` → `Spot`, `Order` → `LineItem`).
 
-**Quick test to decide aggregation vs composition**: *"If I delete the
-container, should the contained objects be deleted too?"* Yes → composition.
-No, they can stand alone or move elsewhere → aggregation.
+### Deciding between them
+
+Don't think about garbage collection — in C# the GC frees whatever is
+unreachable regardless of which relationship you drew, so "will the object
+be deleted?" is the wrong question and will mislead you (by that logic
+every `List<T>` field would look like composition).
+
+The real test is about **ownership and conceptual lifecycle**:
+
+> **Composition**: the part belongs *exclusively* to this whole, is created
+> and controlled by it, and has no meaningful independent existence. It
+> can't be shared with or transferred to another whole.
+>
+> **Aggregation**: the whole references parts that exist independently of
+> it, could belong to a different whole instead, and may outlive it.
+
+| Example | Relationship | Why |
+|---|---|---|
+| `ParkingFloor` → `ParkingSpot` | Composition | A spot is defined by its floor; it can't be moved to another building |
+| `Order` → `OrderLineItem` | Composition | A line item has no meaning outside its order |
+| `Library` → `Book` | Aggregation | A book can be transferred to another library |
+| `Team` → `Employee` | Aggregation | An employee exists before, after, and outside the team |
+
+**Honest caveat worth knowing**: UML's aggregation semantics are famously
+vague, and practitioners disagree about borderline cases. Interviewers care
+that you can distinguish *strong exclusive ownership* from *a reference to
+something independent* — they will not quibble over a hollow vs filled
+diamond. If you're unsure, say which you mean in words.
 
 ### 2.4 Inheritance ("is-a") and Realization ("implements")
 

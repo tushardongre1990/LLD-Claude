@@ -223,20 +223,32 @@ tell. Complementary principles (KISS, YAGNI, and the rest) are in
 
 ## How SOLID connects to design patterns (next folder)
 
-- OCP is the direct motivation for **Strategy**, **Factory Method/Abstract
-  Factory**, **Decorator**, and **Observer**.
-- DIP is the direct motivation for **Dependency Injection**, **Strategy**,
-  and **Bridge**.
-- SRP is the direct motivation for **Facade** (pulls orchestration out of a
-  bloated class) and **Command** (extracts "an action" into its own class).
-- ISP shows up whenever you design a **role interface** instead of one big
-  interface implemented by everything.
+These are patterns whose structure **often helps support** a given
+principle — not definitions of them. Each pattern has its own primary
+intent, and reducing patterns to SOLID mappings will mislead you (Bridge
+below is the clearest example):
+
+- **OCP** is frequently served by **Strategy**, **Factory Method**,
+  **Decorator**, and **Observer** — all let you add behavior by adding a
+  class rather than editing one.
+- **DIP** is served by **Dependency Injection** as a technique, and
+  **Strategy** as a structure.
+- **SRP** is served by **Facade** (pulls orchestration out of a bloated
+  class) and **Command** (extracts "an action" into its own class).
+- **ISP** shows up whenever you design a **role interface** instead of one
+  big interface implemented by everything.
+- **Bridge** is *not* really a DIP pattern, despite holding an interface
+  reference. Its actual purpose is letting **two independently varying
+  dimensions** evolve without an N×M class explosion. Describing it as
+  "DIP" would lose the entire point.
 
 ## Code in this folder
 
 - `csharp/SRP.cs`, `OCP.cs`, `LSP.cs`, `ISP.cs`, `DIP.cs` — each has a
-  `...Violation` namespace/region and a `...Fixed` one, so you can diff them.
-- `typescript/solid-principles.ts` — condensed version of all five.
+  `...Violation` namespace and a `...Fixed` one, so you can diff them.
+
+Run them with `dotnet run --project Runner srp` (`ocp`, `lsp`,
+`lsp-violation`, `isp`, `dip`).
 
 ## Common interview variations
 

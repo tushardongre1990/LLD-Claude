@@ -1,20 +1,18 @@
 # Low Level Design (LLD) — Interview Prep Vault
 
 This is your personal, self-paced LLD course. It is organized **topic-wise**: every
-folder contains a `notes.md` (theory + diagrams) plus runnable code. Read the notes,
-then read/run the code, then try to reproduce the class diagram and code from memory —
-that active-recall loop is what actually sticks before an interview.
+folder has a `notes.md` (theory + diagrams), and most also carry runnable C# code
+where executing it adds something over reading it. Conceptual topics — UML, core
+design principles, domain modeling, testing — are notes-only by design. Read the
+notes, run the code where it exists, then try to reproduce the class diagram from
+memory — that active-recall loop is what actually sticks before an interview.
 
-## Language strategy
+## Language
 
-- **C# is the primary language.** Every topic gets full C# code. C#'s explicit
-  `interface`/`abstract class`/access modifiers/enums map almost 1:1 onto how
-  interviewers talk about UML and OOP, so writing it in C# forces you to be precise
-  about the exact thing interviewers are grading.
-- **TypeScript is added for select topics** — enough that you can see the same
-  pattern expressed in a structurally-typed, no-access-modifiers-enforced-at-runtime
-  language, which is a common interview follow-up ("how would this differ in a
-  duck-typed language?"). Not every file is duplicated in both languages.
+**C# only.** Its explicit `interface`/`abstract class`/access modifiers/enums map
+almost 1:1 onto how interviewers talk about UML and OOP, so writing it in C# forces
+you to be precise about exactly what's being graded. One language, no translation
+overhead, everything compiles and runs from one solution.
 
 ## How this vault is built
 
@@ -38,17 +36,30 @@ LLD-Claude/
 │   ├── 06-Core-Design-Principles/        ← DRY, KISS, YAGNI, Tell-Don't-Ask, coupling/cohesion
 │   ├── 07-Domain-Modeling/               ← entity vs value object, aggregates, invariants
 │   ├── 08-Concurrency/                   ← race conditions, locking, optimistic vs pessimistic
-│   └── 09-Testing/                       ← testability as a design signal, test doubles
+│   ├── 09-Testing/                       ← testability as a design signal, test doubles
+│   └── 10-Anti-Patterns/                 ← recognizing bad designs (asked directly in interviews)
 ├── 01-Case-Studies/                      (filled in incrementally)
 ├── Runner/                               ← run any demo: dotnet run --project Runner strategy
 ├── Tests/                                ← xUnit tests for the foundation code
 └── LLD-Claude.slnx
 ```
 
-Folders 01-05 are the **core path**. Folders 06-09 are **reference material
-pulled in just-in-time** — you'll be pointed at them when a case study needs
-them (concurrency shows up first in Movie Ticket Booking, domain modeling in
-Splitwise, and so on).
+The numbers are stable IDs, not a reading order. The actual path is:
+
+```
+01 OOP → 02 UML → 03 SOLID → 06 Core Principles → 07 Domain Modeling
+                                                        ↓
+                          04 Patterns (index only) → 05 Interview Approach
+                                                        ↓
+                                                  Case Studies
+                                                        ↑
+                               08 Concurrency / 09 Testing, pulled in as needed
+```
+
+**06 and 07 are core concepts**, not advanced extras — they just happen to sit
+after 05 numerically. Only **08 Concurrency** and **09 Testing** are true
+just-in-time reference (concurrency first matters at Movie Ticket Booking;
+testing when you start writing case-study code you want to verify).
 
 ## Running the code
 
@@ -71,6 +82,10 @@ dotnet run --project Runner strategy  # run one (state, concurrency, decorator, 
 - [x] Domain Modeling (entity vs value object, aggregates, repositories, **invariants**)
 - [x] Concurrency (race conditions, critical sections, optimistic vs pessimistic, deadlock)
 - [x] Testing (testability as a design signal, test doubles, what to test in a case study)
+- [x] Anti-Patterns (god object, anemic model, primitive obsession, premature abstraction)
+
+**The foundations are done.** Further theory has diminishing returns from
+here — the remaining gap is practice. Start Tier 1 below.
 
 ### Case studies — added one at a time, on request
 
@@ -93,7 +108,7 @@ Tiers are a suggested difficulty order, not a gate — jump wherever you want.
 #### Tier 1 — start here
 | # | Case Study | Core concepts | Likely patterns | Advanced concerns | Status |
 |---|---|---|---|---|---|
-| 1 | Parking Lot System | composition, polymorphism, invariants | Strategy (fee rules), Factory | concurrency (two gates, one spot) | [ ] |
+| 1 | Parking Lot System | composition, polymorphism, invariants | Strategy (fee rules), Factory | *(do it single-threaded first; concurrency — two gates, one spot — is a later extension, not part of the first pass)* | [ ] |
 | 2 | Vending Machine | encapsulation, state transition table | State, Strategy (payment) | change-making algorithm | [ ] |
 | 3 | ATM System | state, responsibility separation, invariants | State, Chain of Responsibility (denominations), Command | concurrency, transaction atomicity | [ ] |
 
@@ -103,7 +118,7 @@ Tiers are a suggested difficulty order, not a gate — jump wherever you want.
 | 4 | Elevator System | state modeling, scheduling | State, Strategy (dispatch algorithm) | concurrency, request queueing | [ ] |
 | 5 | Library Management System | entities, value objects, repository | Strategy (fine rules), Observer (due dates) | date/time modeling | [ ] |
 | 6 | Amazon Locker Service | state, size/fit assignment | State, Strategy, Observer | expiry timeouts | [ ] |
-| 7 | Meeting Scheduler | **interval overlap**, value objects | Strategy (conflict resolution), Observer | recurring events, time zones | [ ] |
+| 7 | Meeting Scheduler | **interval overlap** (`startA < endB && startB < endA`, half-open ranges), value objects | Strategy (conflict resolution), Observer | recurring events, time zones | [ ] |
 | 8 | Movie Ticket Booking ⭐ | entities, invariants, state | State (seat), Strategy (pricing), Observer | **concurrency — the seat-locking problem**, hold-with-timeout | [ ] |
 | 9 | Online Stock Brokerage | order lifecycle, value objects (Money) | Observer (price feed), State (order), Command | partial fills, matching | [ ] |
 
@@ -114,7 +129,7 @@ Tiers are a suggested difficulty order, not a gate — jump wherever you want.
 | 11 | Hotel Management System | aggregates, date ranges | Strategy (room pricing), State, Observer | overbooking policy | [ ] |
 | 12 | Restaurant Management System | domain modeling, aggregates | State (order/table), Strategy (billing) | concurrency (table assignment) | [ ] |
 | 13 | Airline Management System | complex relationships, value objects | Strategy (pricing), State, Observer | seat maps, multi-leg itineraries | [ ] |
-| 14 | Online Blackjack Game | polymorphism, game state | State, Strategy (rules), Singleton (deck) | shuffling, multi-player turns | [ ] |
+| 14 | Online Blackjack Game | polymorphism, game state | State, Strategy (rules), *maybe* Factory (card/deck creation) | shuffling, multi-player turns | [ ] |
 | 15 | Chess Game ⭐ | **polymorphic move validation**, board composition, invariants (king not in check) | Command (history), Memento (undo), State (turn) | check/checkmate detection | [ ] |
 
 #### Tier 4 — large object graphs, trees, many-to-many
@@ -122,9 +137,9 @@ Tiers are a suggested difficulty order, not a gate — jump wherever you want.
 |---|---|---|---|---|---|
 | 16 | Amazon Online Shopping | aggregates, Money, order lifecycle | Strategy (discounts), State, Observer, Facade (checkout) | inventory concurrency, idempotency | [ ] |
 | 17 | Stack Overflow | tree structures, reputation rules | Composite (comment threads), Observer, Strategy (ranking) | vote integrity | [ ] |
-| 18 | Facebook | large object graph, privacy rules | Observer (feed), Composite | feed generation at scale (→ HLD) | [ ] |
+| 18 | Facebook | large object graph, **graph modelling**, privacy rules | Observer (feed) | feed generation at scale (→ HLD) | [ ] |
 | 19 | ESPNcricinfo | event-driven state, scoring rules | Observer (live updates), State, Strategy | event replay | [ ] |
-| 20 | LinkedIn | graph relationships, notifications | Observer, Composite | connection-degree queries | [ ] |
+| 20 | LinkedIn | **graph relationships** (User ↔ Connection), notifications | Observer | connection-degree queries | [ ] |
 | 21 | Jigsaw Puzzle | object modeling, fit algorithm | Strategy (solver) | edge-matching efficiency | [ ] |
 | 22 | Splitwise ⭐ (bonus) | **value objects (Money), invariants, rounding**, graph of debts | Strategy (equal/exact/percent split) | debt simplification, currency | [ ] |
 | 23 | Cab Booking / Ride Sharing (bonus) | state, matching, value objects (Location) | Strategy (fare), State (ride), Observer (location) | concurrency (driver double-assignment), geo-indexing | [ ] |
@@ -132,9 +147,9 @@ Tiers are a suggested difficulty order, not a gate — jump wherever you want.
 ⭐ = highest interview frequency / best value per hour spent.
 
 Each case study folder will follow the same template:
-`notes.md` (requirements → actors → use cases → class diagram → design pattern
-choices → extensibility/edge cases → common interviewer follow-up variations)
-plus `csharp/` and, for the highest-frequency ones, `typescript/` implementations.
+`notes.md` (requirements → actors → use cases → invariants → class diagram →
+design pattern choices → extensibility/edge cases → common interviewer follow-up
+variations) plus a `csharp/` implementation and tests.
 
 See [`01-Case-Studies/README.md`](01-Case-Studies/README.md) for how each
 session actually runs (just-in-time pattern coverage + interviewer-style
@@ -160,6 +175,8 @@ learning and it's the mistake this vault is structured to avoid.
    study calls for them.
 
 Pull in `08-Concurrency` when you reach Movie Ticket Booking (or earlier if
-an interviewer asks), and `09-Testing` when you start writing case-study
-code you want to verify.
+an interviewer asks), `09-Testing` when you start writing case-study code
+you want to verify, and skim `10-Anti-Patterns` once before your first
+real interview — it's the answer key for "what's wrong with this design?"
+questions.
 # LLD-Claude

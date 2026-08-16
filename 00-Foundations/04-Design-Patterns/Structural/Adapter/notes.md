@@ -41,11 +41,13 @@ directly.
 ## Object Adapter vs Class Adapter
 
 - **Object Adapter** (shown above): wraps an *instance* of the adaptee via
-  composition. Works in C#/TypeScript (no multiple inheritance needed) —
-  this is the version you'll actually write.
-- **Class Adapter**: inherits from the adaptee directly. Requires multiple
-  inheritance, so it isn't idiomatic in C# or TypeScript — mention it exists
-  (from the original GoF book, using C++) but default to Object Adapter.
+  composition. This is the version you'll actually write.
+- **Class Adapter**: inherits from the adaptee directly. The original GoF
+  book assumed C++ multiple inheritance, which C# doesn't have — you can
+  approximate it by inheriting the adaptee and implementing the target
+  interface, but it inherits the adaptee's whole surface area and couples
+  you to its implementation. Mention it exists, then default to Object
+  Adapter and say why: composition over inheritance.
 
 ## Adapter vs Facade — a common mix-up
 

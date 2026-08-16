@@ -116,11 +116,17 @@ flowchart TD
     B -->|nothing yet| G[Leave it inline — YAGNI]
 ```
 
-Every pattern in [`../04-Design-Patterns/`](../04-Design-Patterns/README.md)
-is essentially a named answer to "this specific thing varies, here's how to
-isolate it." Practice asking "what varies?" out loud during case studies —
-it's the habit that makes pattern selection feel obvious instead of
-memorized.
+**Many** of the patterns in
+[`../04-Design-Patterns/`](../04-Design-Patterns/README.md) can be read this
+way — Strategy, State, Factory, Decorator and Bridge especially. Others
+answer different recurring problems entirely: Iterator is about traversal,
+Memento about state capture, Proxy about access control, Composite about
+tree structure, Mediator about communication topology, Flyweight about
+memory. "What varies?" is the most productive *first* question, not a
+universal explanation.
+
+Practice asking it out loud during case studies — it's the habit that makes
+pattern selection feel obvious instead of memorized.
 
 ---
 

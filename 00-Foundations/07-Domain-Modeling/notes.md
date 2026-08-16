@@ -9,6 +9,16 @@ always be true about it?*
 
 The **invariants** section is the highest-value part of this page.
 
+> ⚠️ **These are modeling tools, not mandatory boxes to fill.** Not every
+> design needs an aggregate root, a repository, and a domain service. A
+> Parking Lot design may need only entities, two or three value objects,
+> and a clear set of invariants — that's a complete answer. Introducing
+> DDD vocabulary because the terminology exists is the same
+> over-engineering failure that
+> [`../06-Core-Design-Principles/notes.md`](../06-Core-Design-Principles/notes.md)
+> warns about with interfaces. Reach for each concept when the domain
+> actually presents the problem it solves.
+
 ---
 
 ## Entity vs Value Object ⭐
@@ -149,6 +159,69 @@ encapsulation, fail-fast, and invariant thinking at once.
 
 ---
 
+## Two value objects worth knowing cold
+
+These two show up in more case studies than anything else on this page, and
+getting them wrong is the most common source of "primitive obsession."
+
+### Money
+
+Never model money as a bare `decimal` plus a stray `string currency`. That
+scatters currency rules across every class that touches a price.
+
+```csharp
+public readonly record struct Money(decimal Amount, string Currency)
+{
+    public static Money operator +(Money a, Money b)
+    {
+        // The invariant lives here, once, instead of being forgotten
+        // at every call site.
+        if (a.Currency != b.Currency)
+            throw new InvalidOperationException(
+                $"Cannot add {a.Currency} to {b.Currency}.");
+
+        return a with { Amount = a.Amount + b.Amount };
+    }
+}
+```
+
+Points interviewers probe:
+- **Use `decimal`, never `double`.** Binary floating point can't represent
+  0.1 exactly; money arithmetic drifts. Saying this unprompted is a cheap,
+  reliable signal.
+- **Mixed currencies must be rejected**, not silently added.
+- **Rounding**: splitting ₹100 three ways gives 33.33 × 3 = 99.99. Where
+  does the missing paisa go? Some rule must exist and be deliberate —
+  this is *the* central problem in Splitwise.
+
+Pays off in Splitwise, Amazon Shopping, Restaurant, Hotel, Airline,
+Brokerage, ATM, and Parking Lot.
+
+### Dates, times, and durations
+
+```csharp
+public readonly record struct DateRange(DateOnly Start, DateOnly End)
+{
+    public bool Overlaps(DateRange other) =>
+        Start < other.End && other.Start < End; // half-open [Start, End)
+}
+```
+
+Points worth knowing:
+- **Pick the narrowest type**: `DateOnly` for a calendar date, `TimeOnly`
+  for a wall-clock time, `DateTimeOffset` when an absolute instant matters,
+  `TimeSpan` for a duration. Reaching for `DateTime` for everything is a
+  small but visible imprecision.
+- **Half-open ranges `[start, end)`** make adjacency clean: a 10:00–11:00
+  meeting and an 11:00–12:00 meeting **do not** overlap. Decide this
+  explicitly — it's the entire correctness question in Meeting Scheduler.
+- **Never call `DateTime.Now` inside business logic.** Inject an `IClock`;
+  otherwise late fees, expiry, and overdue rules are untestable. See
+  [`../09-Testing/notes.md`](../09-Testing/notes.md).
+
+Pays off in Library Management, Meeting Scheduler, Hotel, Car Rental,
+Airline, and Movie Booking.
+
 ## Domain Service
 
 Behavior that doesn't naturally belong to any single entity. When an
@@ -167,6 +240,22 @@ public class FareCalculator
 one, check whether the behavior really belongs on an entity
 (Tell-Don't-Ask). A design that's all `XService` classes and property-bag
 entities is the classic anti-pattern interviewers probe for.
+
+**The decision rule**:
+
+```mermaid
+flowchart TD
+    A[Where does this behavior belong?] --> B{Does it need one entity's<br/>own state and invariants?}
+    B -->|Yes| C[Put it ON that entity]
+    B -->|No| D{Does it genuinely span several objects<br/>with no natural owner?}
+    D -->|Yes| E[Domain service]
+    D -->|No| F[Reconsider — it probably<br/>belongs on an entity after all]
+```
+
+`order.Cancel()` belongs on `Order` — it needs the order's own state and
+enforces its own invariant. `FareCalculator.Calculate(trip, surgePolicy)`
+is a genuine service — it spans a trip, a pricing policy, and rules that
+belong to neither.
 
 ---
 

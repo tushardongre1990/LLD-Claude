@@ -31,20 +31,21 @@ The client only ever calls `HasNext()`/`Next()` — it never touches
 free to switch its internal storage (array → linked list → tree) without
 breaking any client code.
 
-## Why this matters less in modern C#/TypeScript than in the original GoF book
+## Why this matters less in modern C# than in the original GoF book
 
-Both languages have this pattern **built into the language itself**:
+C# has this pattern **built into the language**: any class implementing
+`IEnumerable<T>`/`IEnumerator<T>` automatically works with `foreach`, LINQ,
+and collection expressions. `yield return` writes the iterator state
+machine for you, so you never hand-roll the interface methods.
 
-- **C#**: any class implementing `IEnumerable<T>`/`IEnumerator<T>`
-  automatically works with `foreach`, LINQ, etc. `yield return` lets you
-  write a custom iterator without hand-rolling the interface methods.
-- **TypeScript**: the `Symbol.iterator` protocol makes any object usable
-  with `for...of`, spread syntax, and destructuring, the same way.
+(Most modern languages did the same — Java's `Iterable`, Python's
+`__iter__`, JavaScript's `Symbol.iterator`. It's worth knowing this is a
+general trend, not a C# quirk.)
 
-So in an interview, you rarely need to *implement* Iterator from scratch —
-you need to **recognize** that `foreach`/`for...of` support is exactly this
-pattern already solved for you, and know how to add it to a custom
-collection type when asked.
+So in an interview you rarely need to *implement* Iterator from scratch —
+you need to **recognize** that `foreach` support is exactly this pattern
+already solved for you, and know how to add it to a custom collection type
+when asked.
 
 ## When to use
 

@@ -38,8 +38,7 @@ added here as its own folder.
 ```
 NN-CaseStudyName/
 ├── notes.md
-├── csharp/           full implementation
-└── typescript/       only for the highest-frequency problems
+└── csharp/           full implementation + tests
 ```
 
 ## `notes.md` structure
@@ -61,7 +60,7 @@ Each case study's notes follow this order, which mirrors the framework in
 11. **Sequence diagram** — for the one or two non-obvious flows
 12. **State diagram** — where a lifecycle exists
 13. **Concurrency** — where shared mutable state exists
-14. **Implementation** — C# (+ TypeScript for the high-frequency ones)
+14. **Implementation** — C#
 15. **Tests** — happy path, invariants, boundaries, illegal transitions
 16. **Edge cases**
 17. **Extension exercises** — 5-10 "now add X" changes to attempt yourself

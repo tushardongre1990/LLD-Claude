@@ -82,6 +82,22 @@ that break whenever you refactor internals, without catching real bugs.
 
 ---
 
+## Test levels — know the vocabulary
+
+You'll almost only write unit tests in an LLD interview, but be able to
+place them:
+
+| Level | Scope | Speed | In LLD interviews |
+|---|---|---|---|
+| **Unit** | One class, dependencies faked | Milliseconds | This is what you write |
+| **Integration** | Several real components together (e.g. service + real repository) | Seconds | Mention as the next layer |
+| **End-to-end** | The whole system through its outer interface | Slow, brittle | Rarely relevant to LLD |
+
+The usual shape is many unit tests, fewer integration tests, very few
+end-to-end — the "test pyramid." If asked where the line falls: the moment
+a test needs a database, a network, or the real clock, it's no longer a
+unit test.
+
 ## What to test in an LLD case study
 
 For each case study, this checklist gives you meaningful coverage fast:
@@ -99,6 +115,17 @@ For each case study, this checklist gives you meaningful coverage fast:
 That last row is worth calling out: a test that **adds a new
 implementation and asserts nothing else changed** is a *test of your OCP
 claim*. It's an unusual and impressive thing to show.
+
+**How many tests?** Don't aim for exhaustive coverage — aim for
+**3-8 meaningful tests per case study**, one from each category above, plus
+concurrency tests where shared mutable state exists. In a timed interview,
+three tests that pin down the core invariants beat twenty that restate
+getters.
+
+And when practising: **write them yourself** rather than reading the
+reference suite. Writing the test is where you discover that your API
+forces callers into a race, or that you never defined what happens at
+capacity.
 
 ---
 

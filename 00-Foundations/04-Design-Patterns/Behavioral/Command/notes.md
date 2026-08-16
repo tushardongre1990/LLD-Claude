@@ -56,12 +56,35 @@ a history stack so `Undo()` reverses exactly that action later.
 
 ## Interview variations
 
-- "Add undo/redo to this text editor design." → Command, with a history
-  stack; mention `Undo()` needs each command to remember enough state to
-  reverse itself (e.g. `InsertTextCommand` stores what was inserted and
-  where, so `Undo()` can delete exactly that).
+- "Add undo/redo to this text editor design." → Command with **two
+  stacks**: execute pushes onto undo and clears redo; undo moves a command
+  from undo→redo; redo moves it back. Mention that `Undo()` needs each
+  command to remember enough state to reverse itself (e.g.
+  `InsertTextCommand` stores what was inserted and where, so `Undo()` can
+  delete exactly that).
+- "Why does a new action clear the redo stack?" → once you branch off the
+  history, the old redo path is unreachable. Every real editor works this
+  way, and it's a nice detail to volunteer.
+- "What if an action can't cleanly reverse itself?" → snapshot the state
+  instead with [Memento](../Memento/notes.md), or store the prior value
+  inside the command.
 - "How would you support macro/batch actions (run several commands as
   one)?" → `CompositeCommand : ICommand` holding `List<ICommand>`.
-- "How would you queue commands to run later or replay a log of actions?" →
-  since each `ICommand` is just an object, store/serialize the list and
-  replay by calling `Execute()` on each in order.
+- "How would you queue commands to run later?" → in-process, a
+  `Queue<ICommand>` works directly, since each command already carries
+  everything it needs to run.
+- "How would you persist a command log and replay it after a restart?" →
+  be careful here; the naive answer is wrong. You generally **cannot
+  serialize the command objects themselves** — `TurnOnCommand` holds a
+  live reference to a `Light`, which isn't meaningful once the process
+  dies. Real systems persist a **command/event DTO** and reconstruct the
+  command on replay:
+
+  ```jsonc
+  { "type": "TurnOnLight", "lightId": "L-123", "at": "2026-08-16T10:00:00Z" }
+  ```
+
+  On replay you resolve `lightId` to the current `Light` instance and
+  build a fresh `TurnOnCommand`. That resolve-then-reconstruct step is
+  the whole point, and noticing it is a genuine seniority signal (it's
+  the same insight behind event sourcing).

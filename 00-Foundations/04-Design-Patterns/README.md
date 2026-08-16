@@ -88,5 +88,5 @@ pick these up as the case studies demand them rather than all at once.
 ```
 PatternName/
 ├── notes.md        # intent, structure diagram, when to use / not use, interview variations
-└── PatternName.cs  # runnable-shape C# example (+ .ts for the highest-frequency patterns)
+└── PatternName.cs  # runnable C# example (via `dotnet run --project Runner <name>`)
 ```

@@ -212,5 +212,6 @@ base (e.g., every `Vehicle` subtype shares a `licensePlate` field and a
 - `csharp/Abstraction.cs` — `IPaymentProcessor` with two implementations.
 - `csharp/Inheritance.cs` — `Vehicle` → `Car` / `Motorcycle` abstract hierarchy.
 - `csharp/Polymorphism.cs` — runtime dispatch over a `List<Vehicle>`.
-- `typescript/oop-basics.ts` — all four pillars in one file, TypeScript idioms
-  called out (structural typing, `implements`, `#privateField` vs `private`).
+
+Run any of them with `dotnet run --project Runner encapsulation`
+(`abstraction`, `inheritance`, `polymorphism`).

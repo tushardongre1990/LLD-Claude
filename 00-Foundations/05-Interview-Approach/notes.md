@@ -99,6 +99,34 @@ signal; reflexive abstraction is a mid-level tell. See
 [`../03-SOLID-Principles/notes.md`](../03-SOLID-Principles/notes.md) §
 "SOLID vs over-engineering".
 
+### Refactoring signals — the fast lookup
+
+Scan your own design (and any code an interviewer hands you) for these.
+Each one is a smell with a well-known response:
+
+| What you see | Likely problem | Consider |
+|---|---|---|
+| A `switch` you'd revisit for each new requirement | OCP | Polymorphism, [Strategy](../04-Design-Patterns/Behavioral/Strategy/notes.md), [Factory](../04-Design-Patterns/Creational/FactoryMethod/notes.md) |
+| Repeated `if (status == ...)` across methods | Scattered lifecycle logic | [State](../04-Design-Patterns/Behavioral/State/notes.md) |
+| Subclasses differing only by one algorithm | Inheritance used for behavior swap | [Strategy](../04-Design-Patterns/Behavioral/Strategy/notes.md) |
+| A constructor with many optional params | Telescoping constructor | [Builder](../04-Design-Patterns/Creational/Builder/notes.md) |
+| A class per *combination* of options | Subclass explosion | [Decorator](../04-Design-Patterns/Structural/Decorator/notes.md) |
+| Two axes of variation heading to N×M classes | Coupled hierarchies | [Bridge](../04-Design-Patterns/Structural/Bridge/notes.md) |
+| Many classes notifying each other directly | Tangled coupling | [Observer](../04-Design-Patterns/Behavioral/Observer/notes.md) or [Mediator](../04-Design-Patterns/Behavioral/Mediator/notes.md) |
+| `if (isLeaf)` sprinkled over tree code | Missing uniform abstraction | [Composite](../04-Design-Patterns/Structural/Composite/notes.md) |
+| Caller orchestrating 5 services in a fixed order | Leaked complexity | [Facade](../04-Design-Patterns/Structural/Facade/notes.md) |
+| `customer.GetX().GetY().GetZ()` | Law of Demeter | Delegate; add a method on `customer` |
+| `public List<T> Items { get; set; }` | Leaky encapsulation | Private field + `IReadOnlyList<T>` |
+| `new SqlRepository()` inside a service | DIP / untestable | Inject the interface |
+| Data-only classes + `XService` holding all logic | [Anemic model](../10-Anti-Patterns/notes.md) | Move behavior onto the entity |
+| Important concept as bare `string`/`decimal` | Primitive obsession | Value object ([Money](../07-Domain-Modeling/notes.md)) |
+| A class depending on 8 others | Low cohesion / high coupling | Split it (SRP) |
+| An interface with one implementation | Speculative generality | Delete it until a second appears |
+
+The last row matters as much as the rest — see
+[`../10-Anti-Patterns/notes.md`](../10-Anti-Patterns/notes.md) for the full
+set, including the ones you commit while *trying* to look sophisticated.
+
 ## 7. Write core class skeletons
 
 Once the diagram is stable, write the actual interfaces/classes for the
