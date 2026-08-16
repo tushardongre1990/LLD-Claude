@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Memento pattern.
+//   dotnet run --project Runner memento
+
 namespace Foundations.Patterns.Behavioral.Memento;
 
 // The memento: immutable snapshot. Its constructor is internal-ish by

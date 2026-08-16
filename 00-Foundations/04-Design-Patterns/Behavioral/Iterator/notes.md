@@ -18,12 +18,39 @@ classDiagram
         -List~string~ urls
         +CreateIterator() IIterator~string~
     }
-    class HistoryIterator {
+    class ListIterator~T~ {
+        -List~T~ _items
+        -int _position
         +HasNext() bool
-        +Next() string
+        +Next() T
     }
-    IIterator <|.. HistoryIterator
-    BrowserHistory ..> HistoryIterator : creates
+    IIterator~T~ <|.. ListIterator~T~
+    BrowserHistory ..> ListIterator~T~ : creates
+```
+
+```csharp
+public interface IIterator<T>
+{
+    bool HasNext();
+    T Next();
+}
+
+public class ListIterator<T> : IIterator<T>
+{
+    private readonly List<T> _items;
+    private int _position;                       // each iterator owns its cursor
+
+    public bool HasNext() => _position < _items.Count;
+    public T Next()       => _items[_position++];
+}
+
+public class BrowserHistory
+{
+    private readonly List<string> _urls = new();
+
+    // Client gets an iterator, never the raw List<string>.
+    public IIterator<string> CreateIterator() => new ListIterator<string>(_urls);
+}
 ```
 
 The client only ever calls `HasNext()`/`Next()` — it never touches
@@ -42,10 +69,40 @@ machine for you, so you never hand-roll the interface methods.
 `__iter__`, JavaScript's `Symbol.iterator`. It's worth knowing this is a
 general trend, not a C# quirk.)
 
+```csharp
+// The same class, the idiomatic way. `yield return` writes the state
+// machine — this IS Iterator, with language support instead of IIterator.
+public class BrowserHistoryEnumerable : IEnumerable<string>
+{
+    private readonly List<string> _urls = new();
+
+    public IEnumerator<string> GetEnumerator()
+    {
+        foreach (var url in _urls)
+            yield return url;
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+}
+
+foreach (var url in history2)   // works purely because of IEnumerable<T>
+    Console.WriteLine(url);
+```
+
 So in an interview you rarely need to *implement* Iterator from scratch —
 you need to **recognize** that `foreach` support is exactly this pattern
 already solved for you, and know how to add it to a custom collection type
 when asked.
+
+📄 [`Iterator.cs`](Iterator.cs) · `dotnet run --project Runner iterator`
+
+> **Try it:** create two iterators over the same `BrowserHistory` and advance
+> them at different rates. They don't interfere — each owns its `_position`,
+> which is precisely why the cursor lives in the iterator and not the
+> collection. Then call `history.Visit(...)` mid-traversal and see what your
+> hand-rolled iterator does versus what `foreach` over the `IEnumerable`
+> version does (the latter throws; yours doesn't). Concurrent modification is
+> a favourite follow-up.
 
 ## When to use
 

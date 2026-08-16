@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the FactoryMethod pattern.
+//   dotnet run --project Runner factory
+
 namespace Foundations.Patterns.Creational.FactoryMethod;
 
 public enum VehicleType { Car, Motorcycle, Truck }

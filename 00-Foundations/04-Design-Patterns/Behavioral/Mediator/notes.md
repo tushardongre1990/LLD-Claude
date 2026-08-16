@@ -17,32 +17,77 @@ classic "tightly coupled peer web" problem.
 
 ```mermaid
 classDiagram
-    class ChatMediator {
+    class IChatMediator {
         <<interface>>
-        +SendMessage(message, sender) void
         +AddUser(user) void
+        +SendMessage(message, sender) void
     }
-    class ChatRoom
-    ChatMediator <|.. ChatRoom
+    class ChatRoom {
+        -List~User~ _users
+    }
+    IChatMediator <|.. ChatRoom
 
     class User {
         <<abstract>>
-        #ChatMediator mediator
+        #IChatMediator Mediator
+        +string Name
         +Send(message) void
         +Receive(message) void
     }
-    class Alice
-    class Bob
-    User <|-- Alice
-    User <|-- Bob
-    User --> ChatMediator : only knows this
+    class ChatUser
+    User <|-- ChatUser
+    User --> IChatMediator : only knows this
     ChatRoom o-- User : knows all users
 ```
 
-Every `User` only knows about the `ChatMediator` interface, never about
+Alice, Bob and Carol are **instances** of `ChatUser`, not subclasses — users
+differ by data, not behaviour, so one concrete class is enough. (A subclass
+per user would be exactly the mistake
+[`01-OOP-Basics`](../../../01-OOP-Basics/notes.md) §4 warns about.)
+
+```csharp
+public abstract class User
+{
+    protected readonly IChatMediator Mediator;   // the ONLY thing a user knows
+
+    public void Send(string message) => Mediator.SendMessage(message, this);
+    public void Receive(string message) => Console.WriteLine($"{Name} received: {message}");
+}
+
+// Concrete mediator: knows every user, routes messages. Users never hold
+// references to each other.
+public class ChatRoom : IChatMediator
+{
+    private readonly List<User> _users = new();
+
+    public void AddUser(User user) => _users.Add(user);
+
+    public void SendMessage(string message, User sender)
+    {
+        foreach (var user in _users)
+            if (user != sender)                  // no echo back to the sender
+                user.Receive($"[{sender.Name}]: {message}");
+    }
+}
+
+var room = new ChatRoom();
+var alice = new ChatUser(room, "Alice");
+room.AddUser(alice);                             // registration, not rewiring
+alice.Send("Hey everyone!");
+```
+
+Every `User` only knows about the `IChatMediator` interface, never about
 other `User`s directly. `ChatRoom` (the concrete mediator) knows about all
-users and handles routing messages between them. Adding a 6th user means
-registering it with the mediator — zero changes to existing `User` objects.
+users and handles routing. Adding a 6th user means registering it with the
+mediator — zero changes to existing `User` objects.
+
+📄 [`Mediator.cs`](Mediator.cs) · `dotnet run --project Runner mediator`
+
+> **Try it:** add direct messaging (`SendTo(recipient, message)`), then
+> read-receipts, then a mute list. Each goes into `ChatRoom`. Watch it swell —
+> that's the god-object risk in the trade-offs section happening in front of
+> you. Mediator doesn't remove coupling, it *relocates* it to one place; the
+> bet is that one fat class beats N² thin ones, and it isn't always true.
 
 ## When to use
 

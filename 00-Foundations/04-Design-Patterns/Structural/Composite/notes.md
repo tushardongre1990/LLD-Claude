@@ -26,11 +26,49 @@ classDiagram
     Folder o-- FileSystemEntry : children
 ```
 
+```csharp
+public abstract class FileSystemEntry
+{
+    public abstract long GetSize();      // the one shared operation
+}
+
+// Leaf: no children, returns its own size. Recursion terminates here.
+public class File : FileSystemEntry
+{
+    public override long GetSize() => _sizeBytes;
+}
+
+// Composite: holds children (leaves OR subtrees) and recurses.
+public class Folder : FileSystemEntry
+{
+    private readonly List<FileSystemEntry> _children = new();
+
+    public void Add(FileSystemEntry entry) => _children.Add(entry);
+
+    // Note the type: children are FileSystemEntry, so a Folder cannot tell
+    // (and never asks) whether a child is a File or another Folder.
+    public override long GetSize() => _children.Sum(c => c.GetSize());
+}
+
+var root = new Folder("root");
+root.Add(docs);                       // a subtree
+root.Add(new File("readme.md", 1_200)); // a leaf — same method, same type
+Console.WriteLine(root.GetSize());
+```
+
 A `Folder` contains other `FileSystemEntry`s — which might themselves be
 `Folder`s or `File`s. Calling `GetSize()` on a `Folder` recursively sums its
 children's sizes; calling it on a `File` returns its own size. Client code
 calls `entry.GetSize()` without caring whether `entry` is a leaf or a
 subtree.
+
+📄 [`Composite.cs`](Composite.cs) · `dotnet run --project Runner composite`
+
+> **Try it:** add `Search(string name)` returning matching entries. You'll
+> write it twice — a real answer in `File`, a recursive one in `Folder` — and
+> that's the pattern's actual cost: **every new operation touches every node
+> type**. When operations grow faster than node types, that cost is what
+> pushes you toward [Visitor](../../Behavioral/Visitor/notes.md).
 
 ## When to use
 

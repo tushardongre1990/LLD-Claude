@@ -14,28 +14,82 @@ efficiently, by splitting an object's state into:
 ```mermaid
 classDiagram
     class TreeType {
-        -string name
-        -string textureId
+        <<intrinsic: shared, immutable>>
+        +string Name
+        +string TextureId
         +Draw(x, y) void
     }
-    class TreeFactory {
-        -Dictionary~string,TreeType~ pool
+    class TreeTypeFactory {
+        -Dictionary~tuple,TreeType~ _pool
         +GetTreeType(name, textureId) TreeType
     }
     class Tree {
-        -int x
-        -int y
-        -TreeType type
+        <<extrinsic: unique per instance>>
+        -int _x
+        -int _y
+        -TreeType _type
         +Draw() void
     }
-    TreeFactory --> TreeType : caches/reuses
+    TreeTypeFactory --> TreeType : caches/reuses
     Tree --> TreeType : references shared flyweight
 ```
 
+```csharp
+// The factory is what makes it a Flyweight — without the pool you'd just
+// have two classes and no sharing.
+public class TreeTypeFactory
+{
+    // Tuple key, not a concatenated string: no separator-collision bugs
+    // ("a:b"+"c" vs "a"+"b:c"), no allocation to build the key.
+    private readonly Dictionary<(string Name, string TextureId), TreeType> _pool = new();
+
+    public TreeType GetTreeType(string name, string textureId)
+    {
+        var key = (name, textureId);
+        if (!_pool.TryGetValue(key, out var type))
+        {
+            type = new TreeType(name, textureId);   // created at most once per key
+            _pool[key] = type;
+        }
+        return type;
+    }
+}
+
+// Each Tree stores only its position + a pointer to the shared flyweight.
+public class Tree
+{
+    private readonly int _x, _y;
+    private readonly TreeType _type;
+    public void Draw() => _type.Draw(_x, _y);   // extrinsic state passed in
+}
+
+// 100,000 trees; exactly 2 TreeType objects.
+for (int i = 0; i < 100_000; i++)
+{
+    string species = i % 2 == 0 ? "Oak" : "Pine";
+    var type = factory.GetTreeType(species, $"{species}Texture");
+    forest.Add(new Tree(random.Next(1000), random.Next(1000), type));
+}
+```
+
 A forest with a million trees only needs a handful of `TreeType` objects
-(one per species/texture — the expensive, shared intrinsic state). Each of
-the million `Tree` instances stores just its `(x, y)` position (extrinsic
-state) plus a reference to the shared `TreeType`.
+(one per species/texture — the expensive, shared intrinsic state). Each
+`Tree` instance stores just its `(x, y)` position (extrinsic state) plus a
+reference to the shared `TreeType`.
+
+⚠️ **The flyweight must be immutable.** `TreeType` exposes get-only
+properties for a reason: it's shared by 100,000 owners, so a single mutation
+would be visible to all of them at once. If you find yourself wanting to
+mutate a flyweight, the state you're mutating is extrinsic and belongs in
+`Tree`.
+
+📄 [`Flyweight.cs`](Flyweight.cs) · `dotnet run --project Runner flyweight`
+
+> **Try it:** bypass the factory — `new TreeType(species, texture)` inside the
+> loop — and watch 100,000 objects get created where 2 would do. Then put a
+> mutable `Health` property on `TreeType` and set it on one tree; every tree
+> of that species changes. Both failures come from the same split, which is
+> why naming intrinsic vs extrinsic is the whole interview answer.
 
 ## When to use
 

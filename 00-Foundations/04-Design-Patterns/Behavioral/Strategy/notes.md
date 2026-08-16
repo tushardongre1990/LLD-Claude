@@ -13,29 +13,57 @@ sorting/matching logic, parking fee rules, route-finding.
 
 ```mermaid
 classDiagram
-    class FeeStrategy {
+    class IFeeStrategy {
         <<interface>>
         +Calculate(hours) decimal
     }
     class HourlyFeeStrategy
     class FlatDayRateStrategy
     class FreeFirstHourStrategy
-    FeeStrategy <|.. HourlyFeeStrategy
-    FeeStrategy <|.. FlatDayRateStrategy
-    FeeStrategy <|.. FreeFirstHourStrategy
+    IFeeStrategy <|.. HourlyFeeStrategy
+    IFeeStrategy <|.. FlatDayRateStrategy
+    IFeeStrategy <|.. FreeFirstHourStrategy
 
     class ParkingTicket {
-        -FeeStrategy strategy
+        -IFeeStrategy _strategy
         +CalculateFee(hours) decimal
     }
-    ParkingTicket o-- FeeStrategy
+    ParkingTicket o-- IFeeStrategy
+```
+
+```csharp
+public interface IFeeStrategy { decimal Calculate(int hours); }
+
+public class HourlyFeeStrategy     : IFeeStrategy { public decimal Calculate(int h) => 10m * h; }
+public class FlatDayRateStrategy   : IFeeStrategy { public decimal Calculate(int h) => 50m; }
+public class FreeFirstHourStrategy : IFeeStrategy { public decimal Calculate(int h) => h <= 1 ? 0m : 10m * (h - 1); }
+
+// Depends only on the interface. New pricing schemes are ADDED, never
+// bolted into this class.
+public class ParkingTicket
+{
+    private readonly IFeeStrategy _strategy;
+    public ParkingTicket(IFeeStrategy strategy) => _strategy = strategy;
+    public decimal CalculateFee(int hours) => _strategy.Calculate(hours);
+}
+
+new ParkingTicket(new FreeFirstHourStrategy()).CalculateFee(3);  // 20
+new ParkingTicket(new HourlyFeeStrategy()).CalculateFee(3);      // 30
 ```
 
 `ParkingTicket` doesn't know or care *how* the fee is computed — it just
 calls `_strategy.Calculate(hours)`. Swapping pricing schemes (hourly, flat
 daily rate, first-hour-free promo) means adding a new class, never editing
 `ParkingTicket`. This is the pattern-shaped version of the OCP fix shown in
-`03-SOLID-Principles/notes.md`.
+[`../../../03-SOLID-Principles/notes.md`](../../../03-SOLID-Principles/notes.md).
+
+📄 [`Strategy.cs`](Strategy.cs) · `dotnet run --project Runner strategy`
+
+> **Try it:** add a `WeekendRateStrategy`. Notice you never opened
+> `ParkingTicket` — that untouched class is the whole point, and it's the
+> sentence to say out loud in an interview. Then ask yourself the harder
+> question: if there were only ever *one* fee rule, would you still add the
+> interface? (No — see [YAGNI](../../../06-Core-Design-Principles/notes.md).)
 
 ## When to use
 

@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Flyweight pattern.
+//   dotnet run --project Runner flyweight
+
 namespace Foundations.Patterns.Structural.Flyweight;
 
 // Intrinsic state: shared, immutable, expensive-ish (imagine it also holds

@@ -1,3 +1,6 @@
+// Illustrates notes.md § O — Open/Closed Principle.
+//   dotnet run --project Runner ocp
+
 namespace Foundations.Solid.Ocp.Violation
 {
     public enum VehicleType { Car, Motorcycle }

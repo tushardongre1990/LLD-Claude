@@ -2,8 +2,14 @@
 
 SOLID is the single most-quoted vocabulary in LLD interviews. You don't need
 to recite definitions — you need to **catch violations in your own design as
-you draw it** and explain the fix. Each section below has a violation and a
-fix, matching `csharp/*.cs` in this folder 1:1.
+you draw it** and explain the fix.
+
+> **How to read this chapter.** Each principle is self-contained: diagram →
+> the violation in code → the fix in code → the command to run both. Read
+> straight through; open a `.cs` file only when you want to *change*
+> something. The **Try it** prompts are where the learning is — most of them
+> ask you to feel the cost of the violation rather than just read about it.
+> Names in the diagrams match the code exactly.
 
 ## S — Single Responsibility Principle
 
@@ -15,11 +21,11 @@ still have a single responsibility).
 
 ```mermaid
 classDiagram
-    class MarkerBefore {
+    class ParkingTicketManager {
         <<Violation>>
         +CalculateFee(hours) decimal
-        +SaveToDatabase() void
-        +PrintReceipt() void
+        +SaveToDatabase(ticketId) void
+        +PrintReceipt(ticketId, fee) void
     }
 ```
 
@@ -27,8 +33,27 @@ That class has **three** reasons to change: the billing rules, the
 persistence technology, and the receipt format. Three separate concerns,
 three separate stakeholders, one class.
 
-Fix: split into `FeeCalculator`, `ParkingRepository`, `ReceiptPrinter` — each
-changes for exactly one reason.
+```csharp
+// ❌ Violation — three axes of change in one class
+public class ParkingTicketManager
+{
+    public decimal CalculateFee(int hours) => 20m + 10m * hours;   // billing rules
+    public void SaveToDatabase(string ticketId) { ... }            // persistence tech
+    public void PrintReceipt(string ticketId, decimal fee) { ... } // receipt format
+}
+
+// ✅ Fix — each class changes for exactly one reason
+public class FeeCalculator     { public decimal CalculateFee(int hours) => 20m + 10m * hours; }
+public class ParkingRepository { public void Save(string ticketId) { ... } }
+public class ReceiptPrinter    { public void Print(string ticketId, decimal fee) { ... } }
+```
+
+📄 [`csharp/SRP.cs`](csharp/SRP.cs) · `dotnet run --project Runner srp`
+
+> **Try it:** the requirement "receipts must now be emailed as PDF" arrives.
+> In the violation, find every place you'd touch and what you'd have to
+> re-test. In the fix, only `ReceiptPrinter` moves. That blast-radius
+> difference *is* SRP — it's not about class size.
 
 **Interview tell**: a class named `...Manager`, `...Service`, or `...Helper`
 that has grown methods spanning persistence, business rules, and formatting
@@ -68,6 +93,29 @@ classDiagram
     Vehicle <|-- Truck
     note for Vehicle "Adding Truck = one new class, zero edits to existing ones"
 ```
+
+```csharp
+// ❌ Violation — every new VehicleType reopens this method
+public decimal Calculate(VehicleType type, int hours) => type switch
+{
+    VehicleType.Car        => 20m + 10m * hours,
+    VehicleType.Motorcycle => 10m +  5m * hours,
+    _ => throw new ArgumentOutOfRangeException(nameof(type)),
+};
+
+// ✅ Fix — a new type is a new class; nothing existing is edited
+public abstract class Vehicle { public abstract decimal CalculateFee(int hours); }
+
+public class Car        : Vehicle { public override decimal CalculateFee(int h) => 20m + 10m * h; }
+public class Motorcycle : Vehicle { public override decimal CalculateFee(int h) => 10m +  5m * h; }
+public class Truck      : Vehicle { public override decimal CalculateFee(int h) => 40m + 20m * h; }
+```
+
+📄 [`csharp/OCP.cs`](csharp/OCP.cs) · `dotnet run --project Runner ocp`
+
+> **Try it:** add a `Bus` to both versions. In the violation you edit a
+> method other vehicles already depend on — and every existing branch needs
+> re-testing. In the fix you add a file and touch nothing that already works.
 
 **Interview tell**: a `switch`/`if-else if` chain over a type or category
 that you'd have to **revisit every time a new behavior is introduced**.
@@ -115,6 +163,56 @@ Fix: don't force the inheritance. Model both as implementations of a shape
 abstraction with only the behavior they actually share (`Area()`), not
 mutable `Width`/`Height` setters that only make sense for one of them.
 
+```mermaid
+classDiagram
+    class IShape {
+        <<interface>>
+        +Area() int
+    }
+    class Rectangle {
+        +Width int
+        +Height int
+        +Area() int
+    }
+    class Square {
+        +Side int
+        +Area() int
+    }
+    IShape <|.. Rectangle
+    IShape <|.. Square
+    note for IShape "Only Area() is genuinely shared — so only Area() is in the contract"
+```
+
+```csharp
+// ❌ Violation — the override breaks a promise Rectangle made
+public class Square : Rectangle
+{
+    public override int Width  { get => base.Width;  set { base.Width = value; base.Height = value; } }
+    public override int Height { get => base.Height; set { base.Width = value; base.Height = value; } }
+}
+
+Rectangle r = new Square();
+r.Width = 5;
+r.Height = 10;            // caller expects Width to still be 5...
+Console.WriteLine(r.Area()); // 100, where a Rectangle caller predicted 50
+
+// ✅ Fix — share only Area(); both are immutable, so no setter can lie
+public interface IShape { int Area(); }
+
+public class Rectangle : IShape { /* Width, Height set once in ctor */ }
+public class Square    : IShape { /* Side set once in ctor */ }
+```
+
+Note *why* the fix works: the shapes became **immutable**. LSP violations
+often disappear the moment you stop exposing setters, because there's no
+longer a mutation whose side effects a subtype can redefine.
+
+📄 [`csharp/LSP.cs`](csharp/LSP.cs) · `dotnet run --project Runner lsp-violation` then `lsp`
+
+> **Try it:** run `lsp-violation` and read the number. Nothing threw, nothing
+> failed to compile — the code is simply, silently wrong. That's what makes
+> LSP violations dangerous compared to the other four.
+
 **Interview tell**: any subclass that overrides a method to throw
 `NotSupportedException`, do nothing, or otherwise weaken the base contract
 (e.g. `Penguin : Bird` overriding `Fly()` to throw) is an LSP violation —
@@ -140,6 +238,31 @@ classDiagram
 
 Fix: split into `IWorkable`, `IFeedable`, `ISleepable`; `RobotWorker`
 implements only `IWorkable`.
+
+```csharp
+// ❌ Violation — RobotWorker is forced to answer questions that don't apply
+public class RobotWorker : IWorker
+{
+    public void Work()  => Console.WriteLine("Robot working.");
+    public void Eat()   => throw new NotSupportedException("Robots don't eat.");
+    public void Sleep() => throw new NotSupportedException("Robots don't sleep.");
+}
+
+// ✅ Fix — role interfaces; implement only what applies
+public interface IWorkable  { void Work(); }
+public interface IFeedable  { void Eat(); }
+public interface ISleepable { void Sleep(); }
+
+public class HumanWorker : IWorkable, IFeedable, ISleepable { /* all three */ }
+public class RobotWorker : IWorkable { public void Work() => ...; }   // and nothing else
+```
+
+📄 [`csharp/ISP.cs`](csharp/ISP.cs) · `dotnet run --project Runner isp`
+
+> **Try it:** in the violation, write a method taking `IWorker` that calls
+> `Eat()`. It compiles, and it throws at runtime for robots — the type system
+> was actively lying to you. In the fix, a method taking `IFeedable` simply
+> can't be handed a `RobotWorker`; the compiler catches it.
 
 **Interview tell**: an interface implementation with a method body that's
 empty, throws, or has a comment like `// not applicable` — that's ISP being
@@ -167,15 +290,51 @@ Fix:
 ```mermaid
 classDiagram
     class ParkingLot {
-        -IRepository repository
+        -ITicketRepository _repository
+        +IssueTicket(ticketId) void
     }
-    class IRepository { <<interface>> }
+    class ITicketRepository {
+        <<interface>>
+        +Save(ticketId) void
+    }
     class SqlRepository
     class InMemoryRepository
-    ParkingLot --> IRepository
-    IRepository <|.. SqlRepository
-    IRepository <|.. InMemoryRepository
+    ParkingLot --> ITicketRepository
+    ITicketRepository <|.. SqlRepository
+    ITicketRepository <|.. InMemoryRepository
 ```
+
+```csharp
+// ❌ Violation — high-level policy constructs its own low-level detail
+public class ParkingLot
+{
+    private readonly SqlDatabase _db = new();   // welded to SQL; untestable
+    public void IssueTicket(string ticketId) => _db.Save(ticketId);
+}
+
+// ✅ Fix — both sides depend on the abstraction
+public interface ITicketRepository { void Save(string ticketId); }
+
+public class ParkingLot
+{
+    private readonly ITicketRepository _repository;
+
+    // Dependency Injection is the mechanism; DIP is the goal.
+    public ParkingLot(ITicketRepository repository) => _repository = repository;
+
+    public void IssueTicket(string ticketId) => _repository.Save(ticketId);
+}
+
+new ParkingLot(new SqlRepository());       // production
+new ParkingLot(new InMemoryRepository());  // unit test, no database in sight
+```
+
+📄 [`csharp/DIP.cs`](csharp/DIP.cs) · `dotnet run --project Runner dip`
+
+> **Try it:** write a unit test asserting that issuing a ticket saved it —
+> first against the violation, then the fix. The violation forces you to
+> stand up a database (or give up). Difficulty of testing is the most
+> reliable DIP detector you have, and it's the one interviewers probe.
 
 `ParkingLot` now depends on an abstraction; swap in `InMemoryRepository` for
 unit tests, `SqlRepository` in production, with zero changes to
@@ -264,13 +423,20 @@ below is the clearest example):
   dimensions** evolve without an N×M class explosion. Describing it as
   "DIP" would lose the entire point.
 
-## Code in this folder
+## Recap — the code, and what each file is evidence of
 
-- `csharp/SRP.cs`, `OCP.cs`, `LSP.cs`, `ISP.cs`, `DIP.cs` — each has a
-  `...Violation` namespace and a `...Fixed` one, so you can diff them.
+Every file holds a `...Violation` namespace and a `...Fixed` one, so you can
+read them side by side. The snippets above are excerpts; these run.
 
-Run them with `dotnet run --project Runner srp` (`ocp`, `lsp`,
-`lsp-violation`, `isp`, `dip`).
+| Principle | File | Run | The claim it demonstrates |
+|---|---|---|---|
+| S | [`csharp/SRP.cs`](csharp/SRP.cs) | `srp` | Splitting by axis of change shrinks the blast radius of a new requirement |
+| O | [`csharp/OCP.cs`](csharp/OCP.cs) | `ocp` | A new vehicle type costs one new class and zero edits |
+| L | [`csharp/LSP.cs`](csharp/LSP.cs) | `lsp-violation`, `lsp` | A subtype override silently produces a wrong answer — no exception |
+| I | [`csharp/ISP.cs`](csharp/ISP.cs) | `isp` | Role interfaces turn a runtime throw into a compile error |
+| D | [`csharp/DIP.cs`](csharp/DIP.cs) | `dip` | The same `ParkingLot` runs against SQL or in-memory, untouched |
+
+Prefix each with `dotnet run --project Runner`.
 
 ## Common interview variations
 

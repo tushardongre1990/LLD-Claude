@@ -1,3 +1,6 @@
+// Illustrates notes.md § L — Liskov Substitution Principle.
+//   dotnet run --project Runner lsp-violation   (then: lsp)
+
 namespace Foundations.Solid.Lsp.Violation
 {
     // Square extends Rectangle: the textbook LSP violation. Setting Width on

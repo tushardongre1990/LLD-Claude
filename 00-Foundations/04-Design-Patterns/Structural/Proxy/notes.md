@@ -26,10 +26,46 @@ classDiagram
     ProxyImage --> RealImage : creates on first use
 ```
 
+```csharp
+public interface IImage { void Display(); }
+
+// Expensive to construct — imagine reading a large file from disk.
+public class RealImage : IImage
+{
+    public RealImage(string filename) { _filename = filename; LoadFromDisk(); }
+    public void Display() => Console.WriteLine($"Displaying {_filename}");
+}
+
+// Virtual Proxy: same interface, but defers the expensive construction.
+public class ProxyImage : IImage
+{
+    private readonly string _filename;
+    private RealImage? _real;
+
+    public ProxyImage(string filename) => _filename = filename;  // cheap, no I/O
+
+    public void Display()
+    {
+        _real ??= new RealImage(_filename);   // load exactly once, on first use
+        _real.Display();
+    }
+}
+
+IImage image = new ProxyImage("vacation.jpg"); // instant
+image.Display();   // NOW it loads
+image.Display();   // reuses the loaded RealImage
+```
+
 Callers depend on `IImage`. `ProxyImage` implements the same interface as
 `RealImage`, but defers creating the expensive `RealImage` until `Display()`
 is actually called (lazy loading), and can add checks before/after
 delegating.
+
+⚠️ **That `??=` is not thread-safe.** Two threads can both see `_real == null`
+and both do the expensive load — the identical race to the naive Singleton.
+`Lazy<RealImage>` or a lock fixes it, and this is a favourite follow-up
+precisely because the single-threaded code looks obviously correct. See
+[`../../../08-Concurrency/notes.md`](../../../08-Concurrency/notes.md).
 
 ## Common flavors (know the names)
 
@@ -47,6 +83,14 @@ delegating.
   caching, logging) to an object **without changing its code or its
   callers' code**, and without adding new responsibilities visible to the
   caller (contrast with Decorator, below).
+
+📄 [`Proxy.cs`](Proxy.cs) · `dotnet run --project Runner proxy`
+
+> **Try it:** call `Display()` from ~50 concurrent tasks on a fresh
+> `ProxyImage` and count the "Loading … from disk" lines. You should see more
+> than one. Then swap in `Lazy<RealImage>` and re-run. Don't take the race on
+> trust — the whole reason this trips people up is that reading the code
+> doesn't convince anyone.
 
 ## Proxy vs Decorator — same shape, different intent
 

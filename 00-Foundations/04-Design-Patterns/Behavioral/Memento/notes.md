@@ -37,11 +37,61 @@ classDiagram
   **never looks inside them** — it just hands them back to the originator
   later.
 
+```csharp
+// MEMENTO — immutable snapshot. Note `internal`: the caretaker can hold one
+// but cannot read it. That access modifier IS the encapsulation guarantee.
+public sealed class EditorMemento
+{
+    internal string Content { get; }
+    internal EditorMemento(string content) => Content = content;
+}
+
+// ORIGINATOR — owns the real state; decides what a snapshot means.
+public class TextEditor
+{
+    private string _content = "";
+
+    public EditorMemento Save() => new(_content);
+    public void Restore(EditorMemento memento) => _content = memento.Content;
+}
+
+// CARETAKER — stores mementos, never inspects them.
+public class History
+{
+    private readonly Stack<EditorMemento> _mementos = new();
+    public void Push(EditorMemento memento) => _mementos.Push(memento);
+    public EditorMemento? Pop() => _mementos.Count > 0 ? _mementos.Pop() : null;
+}
+
+editor.Type("Hello");
+history.Push(editor.Save());        // checkpoint
+editor.Type(" Oops typo");
+editor.Restore(history.Pop()!);     // back to "Hello"
+```
+
 This separation is the answer to *"why not just make the fields public and
 copy them?"* — because that would break encapsulation (see
-`01-OOP-Basics`). Memento lets the originator control exactly what's saved
-and how restoration happens, while an external `History`/`Caretaker` only
-manages *when* to save/restore, never *what*.
+[`../../../01-OOP-Basics/notes.md`](../../../01-OOP-Basics/notes.md)).
+Memento lets the originator control exactly what's saved and how restoration
+happens, while an external `History`/`Caretaker` only manages *when* to
+save/restore, never *what*.
+
+📄 [`Memento.cs`](Memento.cs) · `dotnet run --project Runner memento`
+
+> **Try it:** from inside `History`, try to read `memento.Content`. It won't
+> compile from another assembly — that's the pattern being enforced by the
+> language rather than by convention. Then note the limit: `internal` means
+> *same assembly*, so within this project `History` technically could. Real
+> encapsulation here is a design contract the access modifier only
+> approximates, and saying so is a better interview answer than claiming it's
+> airtight.
+>
+> Second experiment: change `_content` from `string` to `StringBuilder` and
+> watch the snapshot silently stop working — you'd be storing a live
+> reference, not a copy. Same defensive-copy trap as
+> [Builder](../../Creational/Builder/notes.md) and
+> [Prototype](../../Creational/Prototype/notes.md). Mementos of mutable state
+> must deep-copy.
 
 ## When to use
 

@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Interpreter pattern.
+//   dotnet run --project Runner interpreter
+
 namespace Foundations.Patterns.Behavioral.Interpreter;
 
 // Context: variable bindings available while evaluating.

@@ -29,18 +29,50 @@ classDiagram
 
 ```csharp
 // Without Builder — unreadable, error-prone (which bool is which?)
-var order = new Order(id: 1, customerId: 42, items: items, discount: 0,
-    isGift: true, giftMessage: null, expressShipping: false, notes: "");
+var pizza = new Pizza("Large", new[] { "Mushroom", "Olives" }, true, false, null, true);
 ```
 
 ```csharp
 // With Builder — reads like a sentence, optional pieces are opt-in
-var order = new OrderBuilder()
-    .For(customerId: 42)
-    .WithItems(items)
-    .AsGift()
+Pizza pizza = new PizzaBuilder()
+    .WithSize("Large")
+    .AddTopping("Mushroom")
+    .AddTopping("Olives")
+    .WithExtraCheese()
     .Build();
 ```
+
+The builder itself — note that every step returns `this`, which is what makes
+the chaining work:
+
+```csharp
+public class PizzaBuilder
+{
+    private string _size = "Medium";              // sensible default
+    private readonly List<string> _toppings = new();
+    private bool _extraCheese;
+
+    public PizzaBuilder WithSize(string size)     { _size = size;       return this; }
+    public PizzaBuilder AddTopping(string t)      { _toppings.Add(t);   return this; }
+    public PizzaBuilder WithExtraCheese()         { _extraCheese = true; return this; }
+
+    public Pizza Build() => new(_size, _toppings.ToList(), _extraCheese);
+    //                                          ^^^^^^^^^ see below
+}
+```
+
+### The `.ToList()` is not incidental ⭐
+
+`Build()` hands `Pizza` a **copy** of the toppings. Pass `_toppings` directly
+and the builder keeps a live reference to the very same `List` the
+"immutable" `Pizza` exposes — so calling `AddTopping()` after `Build()` would
+mutate a pizza that was already finished. Declaring the property as
+`IReadOnlyList<string>` stops *callers* from mutating it; it does nothing to
+stop the builder.
+
+This is a favourite follow-up ("is your immutable object actually
+immutable?"), and it generalizes: **a readonly interface over a collection
+you still hold a mutable reference to is not immutability.**
 
 ## When to use
 
@@ -56,6 +88,13 @@ var order = new OrderBuilder()
 
 - A handful of required fields and no optional ones — a normal constructor
   is simpler and the Builder is pure ceremony.
+
+📄 [`Builder.cs`](Builder.cs) · `dotnet run --project Runner builder`
+
+> **Try it:** delete the `.ToList()` in `Build()`, then in `Run()` keep the
+> builder in a variable, call `Build()`, and *then* `AddTopping("Anchovy")`.
+> Print the pizza you already built. It changed. Put the `.ToList()` back and
+> watch it stop. That's the whole defensive-copy lesson in about four lines.
 
 ## Builder vs Factory
 

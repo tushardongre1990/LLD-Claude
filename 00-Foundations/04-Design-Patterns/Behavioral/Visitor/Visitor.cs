@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Visitor pattern.
+//   dotnet run --project Runner visitor
+
 namespace Foundations.Patterns.Behavioral.Visitor;
 
 public interface IShapeVisitor

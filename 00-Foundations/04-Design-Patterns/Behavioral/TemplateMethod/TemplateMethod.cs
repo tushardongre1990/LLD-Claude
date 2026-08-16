@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the TemplateMethod pattern.
+//   dotnet run --project Runner template
+
 namespace Foundations.Patterns.Behavioral.TemplateMethod;
 
 public record Record(string RawLine);

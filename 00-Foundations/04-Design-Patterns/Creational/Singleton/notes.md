@@ -20,6 +20,12 @@ classDiagram
 - A static accessor creates it on first use (lazy) and returns the same
   instance afterward.
 
+**In the code**: this shape appears four times in
+[`Singleton.cs`](Singleton.cs) — `NaiveParkingLot`, `EagerParkingLot`,
+`LazyParkingLot`, `DoubleCheckedParkingLot` — differing *only* in how
+`GetInstance()` handles concurrency. Read them as four answers to the same
+interview follow-up.
+
 ## When to use
 
 - Exactly one instance must coordinate actions across the system —
@@ -55,7 +61,53 @@ how would you fix it?"). Fixes, in order of how interviewers like to see it:
    worth it if you can't use `Lazy<T>` for some reason (e.g. pre-.NET, or
    the constructor has expensive side effects you want tightly controlled).
 
-See `Singleton.cs` for all three implemented side by side.
+All three, side by side:
+
+```csharp
+// ❌ 1. Naive lazy — NOT thread-safe. Two threads can both see null.
+public sealed class NaiveParkingLot
+{
+    private static NaiveParkingLot? _instance;
+    private NaiveParkingLot() { }                 // nobody outside can `new` it
+
+    public static NaiveParkingLot GetInstance()
+    {
+        if (_instance == null)
+            _instance = new NaiveParkingLot();    // <-- race condition
+        return _instance;
+    }
+}
+
+// ✅ 2. Eager static init — CLR guarantees one-time init. Not lazy.
+public sealed class EagerParkingLot
+{
+    private static readonly EagerParkingLot _instance = new();
+    private EagerParkingLot() { }
+    public static EagerParkingLot GetInstance() => _instance;
+}
+
+// ✅ 3. Lazy<T> — thread-safe AND lazy. The idiomatic modern C# answer.
+public sealed class LazyParkingLot
+{
+    private static readonly Lazy<LazyParkingLot> _instance = new(() => new LazyParkingLot());
+    private LazyParkingLot() { }
+    public static LazyParkingLot GetInstance() => _instance.Value;
+}
+
+// ✅ 4. Double-checked locking — manual, for when you can't use Lazy<T>.
+public static DoubleCheckedParkingLot GetInstance()
+{
+    if (_instance == null)              // first check: avoid locking every call
+    {
+        lock (_lock)
+        {
+            if (_instance == null)      // second check: inside the lock
+                _instance = new DoubleCheckedParkingLot();
+        }
+    }
+    return _instance;
+}
+```
 
 ### The distinction that actually catches people out ⭐
 
@@ -88,6 +140,14 @@ If an interviewer asks "is your Singleton thread-safe?", answer **both**
 halves: safe creation via `Lazy<T>`, and safe state via locking around the
 mutable members. Answering only the first half is the expected mistake.
 See [`../../../08-Concurrency/notes.md`](../../../08-Concurrency/notes.md).
+
+📄 [`Singleton.cs`](Singleton.cs) · `dotnet run --project Runner singleton`
+
+> **Try it:** `LazyParkingLot` deliberately exposes both `IssueTicket` (locked)
+> and `IssueTicketUnsafe` (not). Call the unsafe one from ~100 concurrent
+> tasks and check the final count — you'll lose entries. Then do the same
+> with the locked one. Same Singleton, same safe *creation*; only the state
+> handling differs. That's the two-halves answer made concrete.
 
 ## Interview variations
 

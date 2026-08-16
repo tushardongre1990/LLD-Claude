@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Singleton pattern.
+//   dotnet run --project Runner singleton
+
 namespace Foundations.Patterns.Creational.Singleton;
 
 // 1. Naive lazy Singleton — NOT thread-safe. Two threads can both see

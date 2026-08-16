@@ -47,12 +47,53 @@ classDiagram
     Shape ..> IShapeVisitor : Accept(visitor) calls back
 ```
 
-The trick is **double dispatch**: `shape.Accept(visitor)` calls
-`visitor.VisitCircle(this)` (or `VisitSquare(this)`) — the compiler picks
-the right `Visit...` overload based on the *actual* runtime type of the
-shape, achieved by having each concrete shape's `Accept` call the
-type-specific method directly, rather than a single generic `Visit(Shape)`
-that would need its own type-check.
+```csharp
+public abstract class Shape
+{
+    public abstract void Accept(IShapeVisitor visitor);
+}
+
+public class Circle : Shape
+{
+    public double Radius { get; }
+    // Dispatch #2: Circle knows it's a Circle, so it names the exact method.
+    public override void Accept(IShapeVisitor visitor) => visitor.VisitCircle(this);
+}
+
+public class Square : Shape
+{
+    public override void Accept(IShapeVisitor visitor) => visitor.VisitSquare(this);
+}
+
+// New operation #1 — zero changes to Circle/Square.
+public class AreaVisitor : IShapeVisitor
+{
+    public double TotalArea { get; private set; }
+    public void VisitCircle(Circle c) => TotalArea += Math.PI * c.Radius * c.Radius;
+    public void VisitSquare(Square s) => TotalArea += s.Side * s.Side;
+}
+
+// New operation #2 — again, zero changes to Circle/Square.
+public class SvgExportVisitor : IShapeVisitor { ... }
+
+var areaVisitor = new AreaVisitor();
+foreach (var shape in shapes)
+    shape.Accept(areaVisitor);       // Dispatch #1: virtual call on Shape
+```
+
+The trick is **double dispatch**, and it's worth naming both halves:
+
+1. `shape.Accept(visitor)` — an ordinary virtual call, resolved on the
+   runtime type of the *shape*.
+2. Inside that override, `visitor.VisitCircle(this)` — resolved on the
+   runtime type of the *visitor*.
+
+Two virtual dispatches combine to select one behaviour from the
+(shape × visitor) grid. C# only dispatches on one type per call, so the
+`Accept` indirection is how you fake dispatching on two. That's the entire
+reason `Accept` exists, and it's the thing to say when asked "why not just a
+`Visit(Shape)` method?" — that version would need a type-check inside the
+visitor, which is precisely what the pattern is avoiding.
 
 ## When to use
 
@@ -70,6 +111,15 @@ that would need its own type-check.
   Visitor is the wrong trade-off — every new element type requires adding a
   `Visit...` method to every existing visitor. Prefer plain polymorphism
   (a method on each shape) in that case.
+
+📄 [`Visitor.cs`](Visitor.cs) · `dotnet run --project Runner visitor`
+
+> **Try it:** do both halves and feel the asymmetry. First add a
+> `PerimeterVisitor` — one new file, nothing else touched. Then add a
+> `Triangle` shape — and watch the compiler walk you through *every* visitor
+> demanding a `VisitTriangle`. That's the trade-off in the section above, and
+> having actually felt it is what lets you answer "when would you *not* use
+> Visitor?" convincingly.
 
 ## Interview variations
 

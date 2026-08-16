@@ -9,26 +9,75 @@ whole family (e.g. one vendor/theme/region for another) is a one-line change.
 
 ```mermaid
 classDiagram
-    class NotificationFactory {
+    class INotificationFactory {
         <<interface>>
         +CreateEmailNotifier() IEmailNotifier
         +CreateSmsNotifier() ISmsNotifier
     }
     class UsNotificationFactory
     class IndiaNotificationFactory
-    NotificationFactory <|.. UsNotificationFactory
-    NotificationFactory <|.. IndiaNotificationFactory
+    INotificationFactory <|.. UsNotificationFactory
+    INotificationFactory <|.. IndiaNotificationFactory
 
     class IEmailNotifier { <<interface>> }
     class ISmsNotifier { <<interface>> }
-    NotificationFactory ..> IEmailNotifier : creates
-    NotificationFactory ..> ISmsNotifier : creates
+    INotificationFactory ..> IEmailNotifier : creates
+    INotificationFactory ..> ISmsNotifier : creates
+
+    class NotificationService {
+        -IEmailNotifier _email
+        -ISmsNotifier _sms
+        +NotifyUser(contact, message) void
+    }
+    NotificationService --> INotificationFactory : built from
 ```
 
-`UsNotificationFactory` might create an `SesEmailNotifier` + `TwilioSmsNotifier`;
+`UsNotificationFactory` creates `SesEmailNotifier` + `TwilioSmsNotifier`;
 `IndiaNotificationFactory` creates `SendgridEmailNotifier` + `MsgClueSmsNotifier`.
-Client code depends only on `NotificationFactory`, `IEmailNotifier`,
-`ISmsNotifier` — swapping regions swaps one factory instance.
+
+```csharp
+// One interface, one creation method per product in the family.
+public interface INotificationFactory
+{
+    IEmailNotifier CreateEmailNotifier();
+    ISmsNotifier   CreateSmsNotifier();
+}
+
+public class IndiaNotificationFactory : INotificationFactory
+{
+    public IEmailNotifier CreateEmailNotifier() => new SendgridEmailNotifier();
+    public ISmsNotifier   CreateSmsNotifier()   => new MsgClueSmsNotifier();
+}
+
+// The client never names a concrete notifier.
+public class NotificationService
+{
+    private readonly IEmailNotifier _email;
+    private readonly ISmsNotifier _sms;
+
+    public NotificationService(INotificationFactory factory)
+    {
+        _email = factory.CreateEmailNotifier();
+        _sms   = factory.CreateSmsNotifier();   // guaranteed to match the email one
+    }
+}
+
+new NotificationService(new IndiaNotificationFactory());  // swapping regions
+new NotificationService(new UsNotificationFactory());     // is a one-line change
+```
+
+`NotificationService` is the class that matters — it depends only on
+`INotificationFactory`, `IEmailNotifier`, `ISmsNotifier`, so swapping regions
+swaps one factory instance.
+
+📄 [`AbstractFactory.cs`](AbstractFactory.cs) · `dotnet run --project Runner abstractfactory`
+
+> **Try it:** try to construct a `NotificationService` that pairs SES email
+> with MsgClue SMS. You can't get there through a factory — and *that
+> impossibility is the pattern's entire purpose*. Then add
+> `CreatePushNotifier()` to the interface and watch both concrete factories
+> break. Both properties come from the same design decision; know both before
+> you propose it.
 
 ## Factory Method vs Abstract Factory, concretely
 

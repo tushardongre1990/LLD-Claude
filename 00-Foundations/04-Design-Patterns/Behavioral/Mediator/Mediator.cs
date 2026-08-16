@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Mediator pattern.
+//   dotnet run --project Runner mediator
+
 namespace Foundations.Patterns.Behavioral.Mediator;
 
 public interface IChatMediator

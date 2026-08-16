@@ -22,6 +22,22 @@ multi-step construction → Builder; etc.). Every case study in
 `01-Case-Studies` will call out which patterns are used and *why*, not just
 that they're used.
 
+## How each pattern page is laid out
+
+Every pattern's `notes.md` is self-contained and follows the same shape:
+diagram → the actual code inline → 📄 a link to the full file and its
+`dotnet run --project Runner <name>` command → a **Try it** prompt. Read
+straight through; open the `.cs` file only when you want to *change*
+something. The names in the diagrams match the code exactly, so nothing
+needs re-mapping as you read.
+
+The **Try it** prompts are the highest-value part of each page. Most of them
+ask you to *break* the pattern — delete the defensive copy, skip the redo
+clear, add the element type that forces every visitor to change — because
+feeling a trade-off is what lets you argue about it in an interview, and
+"when would you *not* use this?" is the question that separates recall from
+judgment.
+
 ## Cheat sheet
 
 | Pattern | Category | Solves | Classic LLD example |

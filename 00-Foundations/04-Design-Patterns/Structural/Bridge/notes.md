@@ -20,15 +20,17 @@ that both want to grow.
 classDiagram
     class RemoteControl {
         <<abstract>>
-        #Device device
+        #IDevice Device
         +TogglePower() void
     }
     class BasicRemote
-    class AdvancedRemote
+    class AdvancedRemote {
+        +Mute() void
+    }
 
-    class Device {
+    class IDevice {
         <<interface>>
-        +IsOn() bool
+        +IsOn bool
         +TurnOn() void
         +TurnOff() void
     }
@@ -37,15 +39,52 @@ classDiagram
 
     RemoteControl <|-- BasicRemote
     RemoteControl <|-- AdvancedRemote
-    RemoteControl o-- Device : bridge
-    Device <|.. Tv
-    Device <|.. Radio
+    RemoteControl o-- IDevice : the bridge
+    IDevice <|.. Tv
+    IDevice <|.. Radio
 ```
 
-`RemoteControl` (the **abstraction** hierarchy) holds a reference to a
-`Device` (the **implementation** hierarchy) instead of inheriting from it.
-Any `RemoteControl` subtype can be paired with any `Device` subtype at
-runtime — `new AdvancedRemote(new Radio())` — with zero new classes.
+```csharp
+// Implementation hierarchy.
+public interface IDevice { bool IsOn { get; } void TurnOn(); void TurnOff(); }
+public class Tv    : IDevice { ... }
+public class Radio : IDevice { ... }
+
+// Abstraction hierarchy — holds a device (the "bridge") instead of
+// inheriting from one.
+public abstract class RemoteControl
+{
+    protected readonly IDevice Device;
+    protected RemoteControl(IDevice device) => Device = device;
+
+    public void TogglePower()
+    {
+        if (Device.IsOn) Device.TurnOff();
+        else             Device.TurnOn();
+    }
+}
+
+public class BasicRemote    : RemoteControl { ... }
+public class AdvancedRemote : RemoteControl { public void Mute() => ...; }
+
+// Any remote x any device, at runtime, with zero combinatorial classes.
+new BasicRemote(new Tv()).TogglePower();
+new AdvancedRemote(new Radio()).TogglePower();
+```
+
+`RemoteControl` (the **abstraction** hierarchy) holds a reference to an
+`IDevice` (the **implementation** hierarchy) instead of inheriting from it.
+Any `RemoteControl` subtype can be paired with any `IDevice` subtype at
+runtime, with zero new classes.
+
+📄 [`Bridge.cs`](Bridge.cs) · `dotnet run --project Runner bridge`
+
+> **Try it:** add a `Speaker` device and a `VoiceRemote`. You wrote 2 classes
+> and got 9 working pairings; the inheritance version would need 9 classes and
+> 3 more for every future device. Write out the N×M arithmetic — that
+> calculation is the answer to "why Bridge?", and it's the same argument as
+> the two-axis example in
+> [`01-OOP-Basics`](../../../01-OOP-Basics/notes.md) §4.
 
 ## When to use
 

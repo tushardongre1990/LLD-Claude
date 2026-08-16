@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Proxy pattern.
+//   dotnet run --project Runner proxy
+
 namespace Foundations.Patterns.Structural.Proxy;
 
 public interface IImage

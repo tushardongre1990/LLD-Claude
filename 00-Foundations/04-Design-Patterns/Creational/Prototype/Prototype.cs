@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Prototype pattern.
+//   dotnet run --project Runner prototype
+
 namespace Foundations.Patterns.Creational.Prototype;
 
 public class Item

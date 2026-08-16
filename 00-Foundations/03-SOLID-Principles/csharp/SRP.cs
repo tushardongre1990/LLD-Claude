@@ -1,3 +1,6 @@
+// Illustrates notes.md § S — Single Responsibility Principle.
+//   dotnet run --project Runner srp
+
 namespace Foundations.Solid.Srp.Violation
 {
     // Three reasons to change live in one class: billing rules, persistence

@@ -10,14 +10,23 @@ identical to a template and is then tweaked.
 
 ```mermaid
 classDiagram
-    class IPrototype {
+    class IPrototype~T~ {
         <<interface>>
-        +Clone() IPrototype
+        +Clone() T
     }
-    class GameBoard {
-        +Clone() GameBoard
+    class Order {
+        +string CustomerId
+        +List~Item~ Items
+        +Clone() Order
+        +ShallowClone() Order
     }
-    IPrototype <|.. GameBoard
+    class Item {
+        +string Name
+        +int Quantity
+        +Clone() Item
+    }
+    IPrototype~T~ <|.. Order
+    Order o-- Item
 ```
 
 ## When to use
@@ -37,19 +46,49 @@ This pattern is mostly tested through **this exact question**: *"Does your
 `Clone()` do a shallow or deep copy, and why does it matter?"*
 
 ```mermaid
-classDiagram
-    class Original {
-        List~Item~ items
+flowchart LR
+    subgraph shallow ["ShallowClone() — MemberwiseClone only"]
+        O1[original: Order] --> I1[(Item: Pizza)]
+        C1[clone: Order] --> I1
+    end
+    subgraph deep ["Clone() — nested references copied too"]
+        O2[original: Order] --> I2[(Item: Pizza)]
+        C2[clone: Order] --> I3[(Item: Pizza, separate object)]
+    end
+```
+
+In the shallow case both `Order` objects point at **one** `Item`, so writing
+through either is visible from the other.
+
+```csharp
+public class Order : IPrototype<Order>
+{
+    public string CustomerId { get; set; } = "";
+    public List<Item> Items { get; set; } = new();
+
+    // ❌ Shallow: reuses the SAME Item objects.
+    public Order ShallowClone() => (Order)MemberwiseClone();
+
+    // ✅ Deep: clone every nested mutable reference too.
+    public Order Clone()
+    {
+        var copy = (Order)MemberwiseClone();
+        copy.Items = Items.Select(i => i.Clone()).ToList();
+        return copy;
     }
-    class ShallowClone {
-        List~Item~ items
-    }
-    class DeepClone {
-        List~Item~ items
-    }
-    Original --> Item : shared reference (shallow)
-    ShallowClone --> Item : same Item objects!
-    DeepClone --> Item2 : brand-new Item copies
+}
+```
+
+And the difference you can actually observe:
+
+```csharp
+var shallow = original.ShallowClone();
+shallow.Items[0].Quantity = 99;
+Console.WriteLine(original.Items[0].Quantity);  // 99 — the original mutated too
+
+var deep = original2.Clone();
+deep.Items[0].Quantity = 99;
+Console.WriteLine(original2.Items[0].Quantity); // 1 — correctly independent
 ```
 
 - **Shallow copy**: copies the object's own fields, but reference-type
@@ -62,6 +101,17 @@ classDiagram
 C#'s `MemberwiseClone()` gives you a shallow copy for free; a correct
 `Clone()` for an object with mutable reference fields must manually deep-copy
 those fields.
+
+Note this is the **same underlying trap** as the `.ToList()` in
+[Builder](../Builder/notes.md) — a copy that shares a mutable reference isn't
+really a copy. Different pattern, identical failure.
+
+📄 [`Prototype.cs`](Prototype.cs) · `dotnet run --project Runner prototype`
+
+> **Try it:** add a `ShippingAddress` class as a mutable reference field on
+> `Order` and clone without deep-copying it. `Clone()` is now *partially*
+> deep — which is the realistic bug, because it looks correct in review. Deep
+> copying is a per-field obligation, not a switch you flip once.
 
 ## Interview variations
 

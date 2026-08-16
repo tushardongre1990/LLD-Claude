@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Command pattern.
+//   dotnet run --project Runner command
+
 namespace Foundations.Patterns.Behavioral.Command;
 
 public interface ICommand

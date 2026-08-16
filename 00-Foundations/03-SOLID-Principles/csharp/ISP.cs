@@ -1,3 +1,6 @@
+// Illustrates notes.md § I — Interface Segregation Principle.
+//   dotnet run --project Runner isp
+
 namespace Foundations.Solid.Isp.Violation
 {
     // A fat interface forces every implementer to deal with methods that

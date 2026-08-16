@@ -26,18 +26,64 @@ classDiagram
     TurnOnCommand --> Light : receiver
 
     class RemoteControl {
-        -ICommand command
-        -Stack~ICommand~ history
-        +PressButton() void
-        +PressUndo() void
+        -Stack~ICommand~ _undo
+        -Stack~ICommand~ _redo
+        +PressButton(command) void
+        +PressUndo() bool
+        +PressRedo() bool
     }
     RemoteControl o-- ICommand
 ```
 
-`RemoteControl` doesn't know it's controlling a `Light` — it just holds an
+`RemoteControl` doesn't know it's controlling a `Light` — it just receives an
 `ICommand` and calls `Execute()`. The command object knows both the
-**receiver** (`Light`) and the **action** (`On()`), and can push itself onto
-a history stack so `Undo()` reverses exactly that action later.
+**receiver** (`Light`) and the **action** (`On()`), and gets pushed onto a
+history stack so `Undo()` reverses exactly that action later.
+
+```csharp
+public class TurnOnCommand : ICommand
+{
+    private readonly Light _light;                 // the receiver
+    public void Execute() => _light.On();
+    public void Undo()    => _light.Off();         // knows how to reverse itself
+}
+
+// The invoker: knows only ICommand, never Light.
+public class RemoteControl
+{
+    private readonly Stack<ICommand> _undo = new();
+    private readonly Stack<ICommand> _redo = new();
+
+    public void PressButton(ICommand command)
+    {
+        command.Execute();
+        _undo.Push(command);
+        _redo.Clear();          // a new action invalidates the redo branch
+    }
+
+    public bool PressUndo()
+    {
+        if (_undo.Count == 0) return false;
+        var command = _undo.Pop();
+        command.Undo();
+        _redo.Push(command);
+        return true;
+    }
+
+    public bool PressRedo() { /* mirror image: pop _redo, Execute, push _undo */ }
+}
+```
+
+**Two stacks, not one** — that's what buys you redo. Execute pushes onto undo
+and clears redo; undo moves a command undo→redo; redo moves it back.
+
+📄 [`Command.cs`](Command.cs) · `dotnet run --project Runner command`
+
+> **Try it:** press undo twice, then execute a *new* command, then try redo.
+> Nothing happens — `_redo.Clear()` discarded the branch. Delete that one line
+> and redo will happily "replay" a command from a history that no longer
+> exists, corrupting the state. One line, and it's the difference between an
+> editor that works and one that doesn't.
 
 ## When to use
 

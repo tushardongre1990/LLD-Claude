@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Facade pattern.
+//   dotnet run --project Runner facade
+
 namespace Foundations.Patterns.Structural.Facade;
 
 public class InventoryService

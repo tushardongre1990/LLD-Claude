@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Strategy pattern.
+//   dotnet run --project Runner strategy
+
 namespace Foundations.Patterns.Behavioral.Strategy;
 
 public interface IFeeStrategy

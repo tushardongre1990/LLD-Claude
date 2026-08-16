@@ -1,3 +1,6 @@
+// Illustrates notes.md § D — Dependency Inversion Principle.
+//   dotnet run --project Runner dip
+
 namespace Foundations.Solid.Dip.Violation
 {
     // High-level ParkingLot is welded to a concrete, low-level SqlDatabase.

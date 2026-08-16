@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Observer pattern.
+//   dotnet run --project Runner observer
+
 namespace Foundations.Patterns.Behavioral.Observer;
 
 public interface IStockObserver

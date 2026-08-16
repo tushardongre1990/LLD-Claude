@@ -38,10 +38,48 @@ classDiagram
     BeverageDecorator o-- Beverage : wraps
 ```
 
+```csharp
+// The decorator IS-A Beverage and HAS-A Beverage. That double relationship
+// is the whole trick — it's what lets decorators wrap each other.
+public abstract class BeverageDecorator : Beverage
+{
+    protected readonly Beverage Inner;
+    protected BeverageDecorator(Beverage inner) => Inner = inner;
+}
+
+// Each concrete decorator adds only its own delta, then delegates.
+public class MilkDecorator : BeverageDecorator
+{
+    public override decimal Cost()       => Inner.Cost() + 0.50m;
+    public override string Description() => Inner.Description() + " + Milk";
+}
+
+public class SugarDecorator : BeverageDecorator { /* + 0.25m */ }
+public class WhipDecorator  : BeverageDecorator { /* + 0.75m */ }
+
+// Any combination, stacked at runtime, no new class needed:
+Beverage order = new WhipDecorator(new SugarDecorator(new MilkDecorator(new Espresso())));
+Console.WriteLine($"{order.Description()} = {order.Cost():C}");
+// Espresso + Milk + Sugar + Whip = $3.50
+```
+
 Each decorator **wraps** a `Beverage` (which might itself be another
-decorator) and **is-a** `Beverage` itself — so decorators stack:
-`new SugarDecorator(new MilkDecorator(new Espresso()))`. Every layer adds
-its own cost/description on top of delegating to the wrapped instance.
+decorator) and **is-a** `Beverage` itself — so decorators stack. Every layer
+adds its own cost/description on top of delegating to the wrapped instance.
+
+Trace `Cost()` through that chain once, outside-in: `Whip` asks `Sugar`,
+which asks `Milk`, which asks `Espresso` (2.00), and the additions unwind
+back out — 2.00 → 2.50 → 2.75 → 3.50. Being able to narrate that recursion
+is what tells an interviewer you understand the pattern rather than
+recognizing its diagram.
+
+📄 [`Decorator.cs`](Decorator.cs) · `dotnet run --project Runner decorator`
+
+> **Try it:** stack the same decorator twice — `new MilkDecorator(new
+> MilkDecorator(new Espresso()))`. It works, and charges for both. Whether
+> that's a feature (double shot) or a bug (duplicate add-on) is a domain
+> question the pattern won't answer for you, and "how do you prevent invalid
+> combinations?" is the natural follow-up.
 
 ## When to use
 

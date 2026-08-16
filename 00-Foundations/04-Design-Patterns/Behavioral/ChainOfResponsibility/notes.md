@@ -9,19 +9,21 @@ The sender doesn't know which handler will end up handling it.
 
 ```mermaid
 classDiagram
-    class Handler {
+    class SupportHandler {
         <<abstract>>
-        #Handler next
-        +SetNext(handler) Handler
-        +Handle(request) void
+        -SupportHandler _next
+        +SetNext(next) SupportHandler
+        +Handle(ticket) void
+        #CanHandle(ticket)* bool
+        #Resolve(ticket)* void
     }
     class L1SupportHandler
     class L2SupportHandler
     class L3SupportHandler
-    Handler <|-- L1SupportHandler
-    Handler <|-- L2SupportHandler
-    Handler <|-- L3SupportHandler
-    Handler --> Handler : next
+    SupportHandler <|-- L1SupportHandler
+    SupportHandler <|-- L2SupportHandler
+    SupportHandler <|-- L3SupportHandler
+    SupportHandler --> SupportHandler : _next
 ```
 
 ```mermaid
@@ -34,10 +36,57 @@ flowchart LR
     L3 -- yes --> Fix3[Resolved]
 ```
 
+```csharp
+public abstract class SupportHandler
+{
+    private SupportHandler? _next;
+
+    public SupportHandler SetNext(SupportHandler next)
+    {
+        _next = next;
+        return next;              // lets callers chain SetNext calls fluently
+    }
+
+    // The traversal logic lives ONCE here, in the base class.
+    public void Handle(SupportTicket ticket)
+    {
+        if (CanHandle(ticket))   Resolve(ticket);
+        else if (_next != null)  _next.Handle(ticket);
+        else                     Console.WriteLine($"No handler could resolve: {ticket.Description}");
+    }
+
+    // Subclasses supply only "is this mine?" and "how do I do it?"
+    protected abstract bool CanHandle(SupportTicket ticket);
+    protected abstract void Resolve(SupportTicket ticket);
+}
+
+public class L1SupportHandler : SupportHandler
+{
+    protected override bool CanHandle(SupportTicket t) => t.Severity == TicketSeverity.Low;
+    protected override void Resolve(SupportTicket t)   => Console.WriteLine($"[L1] Resolved: {t.Description}");
+}
+
+// Wiring the chain — the caller only ever talks to l1.
+l1.SetNext(l2).SetNext(l3);
+l1.Handle(new SupportTicket("App crashing", TicketSeverity.Critical));  // ends up at L3
+```
+
 Each handler holds a reference to the **next** handler. `Handle()` either
-resolves the request or forwards it (`_next?.Handle(request)`). Adding a new
-tier means adding a new handler and re-wiring the chain — no existing
-handler's code changes.
+resolves the request or forwards it. Adding a new tier means adding a new
+handler and re-wiring the chain — no existing handler's code changes.
+
+Worth noticing: this is [Template Method](../TemplateMethod/notes.md) in the
+base class. `Handle()` is a fixed skeleton; `CanHandle`/`Resolve` are the
+varying steps. Patterns compose far more often than the one-per-problem
+framing suggests.
+
+📄 [`ChainOfResponsibility.cs`](ChainOfResponsibility.cs) · `dotnet run --project Runner chain`
+
+> **Try it:** send a `Medium` ticket into a chain wired `l1 → l3` (skipping
+> L2). It falls through to the "no handler" branch. Now ask which is correct
+> for *your* domain — silently dropping it, a fallback handler, or throwing?
+> That's the design decision the pattern forces you to make explicitly, and
+> interviewers ask about it.
 
 ## When to use
 

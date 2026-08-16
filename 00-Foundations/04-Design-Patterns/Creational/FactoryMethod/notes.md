@@ -35,6 +35,21 @@ classDiagram
     SimpleVehicleFactory ..> Vehicle : creates
 ```
 
+```csharp
+public static class SimpleVehicleFactory
+{
+    public static Vehicle Create(VehicleType type) => type switch
+    {
+        VehicleType.Car        => new Car(),
+        VehicleType.Motorcycle => new Motorcycle(),
+        VehicleType.Truck      => new Truck(),
+        _ => throw new ArgumentOutOfRangeException(nameof(type)),
+    };
+}
+
+Vehicle v = SimpleVehicleFactory.Create(VehicleType.Truck);   // caller supplies a token
+```
+
 One place owns the type→class mapping; every caller depends only on
 `Vehicle` and never on `new Car()`.
 
@@ -67,6 +82,32 @@ classDiagram
     VehicleRegistration ..> Vehicle : CreateVehicle() returns
 ```
 
+```csharp
+public abstract class VehicleRegistration
+{
+    // The factory method — subclasses decide the concrete Vehicle.
+    protected abstract Vehicle CreateVehicle();
+
+    // Shared workflow, written ONCE against the abstract product.
+    // This is the reason the pattern is a hierarchy rather than a static method.
+    public decimal SubmitToLot(int hours)
+    {
+        Vehicle vehicle = CreateVehicle();
+        decimal fee = vehicle.CalculateFee(hours);
+        Console.WriteLine($"Registered {vehicle.GetType().Name}, fee {fee:C}");
+        return fee;
+    }
+}
+
+public class CarRegistration        : VehicleRegistration { protected override Vehicle CreateVehicle() => new Car(); }
+public class MotorcycleRegistration : VehicleRegistration { protected override Vehicle CreateVehicle() => new Motorcycle(); }
+public class TruckRegistration      : VehicleRegistration { protected override Vehicle CreateVehicle() => new Truck(); }
+
+// Caller picks a creator; the product type follows from that choice.
+VehicleRegistration registration = new MotorcycleRegistration();
+registration.SubmitToLot(hours: 3);
+```
+
 The defining traits:
 1. There is a **creator hierarchy** (`VehicleRegistration` and its
    subclasses), not just a product hierarchy.
@@ -77,6 +118,15 @@ The defining traits:
 
 Because of (3), adding `TruckRegistration` requires **zero edits to
 existing classes** — genuinely open/closed, which Simple Factory is not.
+
+📄 [`FactoryMethod.cs`](FactoryMethod.cs) · `dotnet run --project Runner factory`
+
+> **Try it:** add a `Bus`, supported by both approaches. Simple Factory: you
+> edit the enum *and* the switch. Factory Method: you add `BusRegistration`
+> and touch nothing else. Now notice the cost — Factory Method needed a whole
+> extra class to buy that. Being able to say "Simple Factory is the
+> proportionate choice here, and here's what I'd give up" is the answer
+> interviewers are actually listening for.
 
 ## When to use which
 

@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Composite pattern.
+//   dotnet run --project Runner composite
+
 namespace Foundations.Patterns.Structural.Composite;
 
 public abstract class FileSystemEntry

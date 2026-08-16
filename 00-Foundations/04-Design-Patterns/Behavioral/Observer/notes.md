@@ -14,34 +14,77 @@ YouTube channel subscriptions.
 
 ```mermaid
 classDiagram
-    class Subject {
+    class IStockSubject {
         <<interface>>
         +Subscribe(observer) void
         +Unsubscribe(observer) void
-        +Notify() void
     }
     class StockTicker {
-        -List~IObserver~ observers
-        -decimal price
+        -List~IStockObserver~ _observers
+        -decimal _price
         +SetPrice(price) void
+        -NotifyAll() void
     }
-    class IObserver {
+    class IStockObserver {
         <<interface>>
-        +Update(price) void
+        +Update(symbol, price) void
     }
     class MobileAppDisplay
     class EmailAlert
 
-    Subject <|.. StockTicker
-    IObserver <|.. MobileAppDisplay
-    IObserver <|.. EmailAlert
-    StockTicker o-- IObserver : notifies
+    IStockSubject <|.. StockTicker
+    IStockObserver <|.. MobileAppDisplay
+    IStockObserver <|.. EmailAlert
+    StockTicker o-- IStockObserver : notifies
 ```
 
-`StockTicker` holds a list of `IObserver`s. When its price changes, it loops
-over the list calling `Update(price)` on each — it never needs to know
+```csharp
+public interface IStockObserver { void Update(string symbol, decimal price); }
+
+public class StockTicker : IStockSubject
+{
+    private readonly List<IStockObserver> _observers = new();
+
+    public void Subscribe(IStockObserver o)   => _observers.Add(o);
+    public void Unsubscribe(IStockObserver o) => _observers.Remove(o);
+
+    public void SetPrice(decimal price)
+    {
+        _price = price;
+        NotifyAll();                  // push model: send the new state directly
+    }
+
+    private void NotifyAll()
+    {
+        foreach (var observer in _observers)
+            observer.Update(_symbol, _price);   // no idea what any of them are
+    }
+}
+
+// Observers can carry their own logic — EmailAlert stays quiet below its threshold.
+public class EmailAlert : IStockObserver
+{
+    public void Update(string symbol, decimal price)
+    {
+        if (price >= _threshold)
+            Console.WriteLine($"[Email] Alert: {symbol} crossed {_threshold:C}");
+    }
+}
+```
+
+`StockTicker` holds a list of `IStockObserver`s. When its price changes, it
+loops over the list calling `Update(...)` on each — it never needs to know
 whether an observer is a mobile display, an email alert, or something added
 next month.
+
+📄 [`Observer.cs`](Observer.cs) · `dotnet run --project Runner observer`
+
+> **Try it:** make one observer throw inside `Update`. Every observer after it
+> in the list silently stops receiving the notification, and the exception
+> surfaces inside `SetPrice` — as if the *price change* failed. One
+> misbehaving subscriber breaking the publisher is the classic Observer
+> failure mode, and "how do you isolate observer failures?" is a real
+> follow-up. (Try/catch per observer is the usual first answer.)
 
 ## Push vs Pull
 

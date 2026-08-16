@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Iterator pattern.
+//   dotnet run --project Runner iterator
+
 using System.Collections;
 
 namespace Foundations.Patterns.Behavioral.Iterator;

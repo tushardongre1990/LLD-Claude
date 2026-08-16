@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the State pattern.
+//   dotnet run --project Runner state
+
 namespace Foundations.Patterns.Behavioral.State;
 
 public interface IOrderState

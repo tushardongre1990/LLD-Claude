@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Builder pattern.
+//   dotnet run --project Runner builder
+
 namespace Foundations.Patterns.Creational.Builder;
 
 // The finished product is immutable — no setters, only a constructor the

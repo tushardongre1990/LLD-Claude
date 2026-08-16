@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Bridge pattern.
+//   dotnet run --project Runner bridge
+
 namespace Foundations.Patterns.Structural.Bridge;
 
 // Implementation hierarchy.

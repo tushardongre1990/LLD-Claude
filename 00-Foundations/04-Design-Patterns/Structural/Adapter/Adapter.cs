@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Adapter pattern.
+//   dotnet run --project Runner adapter
+
 namespace Foundations.Patterns.Structural.Adapter;
 
 // The interface OUR application already codes against.

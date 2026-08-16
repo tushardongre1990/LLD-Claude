@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the AbstractFactory pattern.
+//   dotnet run --project Runner abstractfactory
+
 namespace Foundations.Patterns.Creational.AbstractFactory;
 
 public interface IEmailNotifier

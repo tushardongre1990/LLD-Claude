@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the ChainOfResponsibility pattern.
+//   dotnet run --project Runner chain
+
 namespace Foundations.Patterns.Behavioral.ChainOfResponsibility;
 
 public enum TicketSeverity { Low, Medium, Critical }

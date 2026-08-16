@@ -1,3 +1,6 @@
+// Illustrates notes.md in this folder — the Decorator pattern.
+//   dotnet run --project Runner decorator
+
 namespace Foundations.Patterns.Structural.Decorator;
 
 public abstract class Beverage
