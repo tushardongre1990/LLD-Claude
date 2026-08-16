@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/00-Foundations/">
+    <Project Path="00-Foundations/LLD.Foundations.csproj" />
+  </Folder>
+  <Folder Name="/Runner/">
+    <Project Path="Runner/LLD.Runner.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/LLD.Foundations.Tests/LLD.Foundations.Tests.csproj" />
+  </Folder>
+</Solution>

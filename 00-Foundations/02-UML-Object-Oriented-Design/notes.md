@@ -3,10 +3,23 @@
 UML (Unified Modeling Language) is the diagramming vocabulary interviewers
 expect you to speak fluently — not because they want a textbook-perfect
 diagram, but because it's the fastest shared language for "here are my
-classes and how they relate." In a whiteboard/doc interview you'll mostly
-draw **class diagrams**, occasionally a **use case diagram** to nail down
-scope, and sometimes a **sequence diagram** to show a tricky flow (e.g.
-concurrent seat booking).
+classes and how they relate."
+
+**Don't over-invest in UML.** The goal is communicating a design, not
+notation fluency. Nobody will fail you for a slightly wrong arrowhead;
+they will notice if you can't express containment or a lifecycle clearly.
+Budget your effort:
+
+| Diagram | Value in LLD interviews | Why |
+|---|---|---|
+| **Class diagram** | ★★★★★ | The main artifact of nearly every LLD round |
+| **Sequence diagram** | ★★★★★ | Shows call order and surfaces concurrency issues |
+| **State diagram** | ★★★★☆ | Essential wherever a lifecycle exists (order, elevator, ATM, ride) |
+| **Use case diagram** | ★★☆☆☆ | A spoken actor→action list usually serves the same purpose faster |
+| Activity / object / package / component | ★☆☆☆☆ | Rarely asked; recognize them, don't study them |
+
+The three starred ones are covered below. That's enough for essentially
+every LLD interview.
 
 ## 1. Class Diagram anatomy
 
@@ -178,6 +191,47 @@ interview — the point is showing you can reason about *order of operations*
 and *who calls whom*, which also surfaces concurrency issues (e.g. "what if
 two drivers hit `findAvailableSpot` at the same time?" → leads into a
 locking/thread-safety discussion, a very common senior-level follow-up).
+
+## 4b. State Diagram — for anything with a lifecycle
+
+Whenever an object moves through phases with rules about what's allowed in
+each, sketch the state machine **before** writing the class. It gives you
+your legal transitions, your illegal ones (i.e. your error cases), and your
+test list, all at once.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Placed
+    Placed --> Paid: pay()
+    Placed --> Cancelled: cancel()
+    Paid --> Shipped: ship()
+    Paid --> Cancelled: cancel()
+    Shipped --> Delivered: deliver()
+    Cancelled --> [*]
+    Delivered --> [*]
+```
+
+Read it as: from `Shipped`, the *only* legal move is `deliver()` — so
+`cancel()` from `Shipped` must be rejected. That's a requirement you'd
+likely miss if you went straight to code.
+
+This maps directly onto the
+[State pattern](../04-Design-Patterns/Behavioral/State/notes.md), and applies
+to Vending Machine, ATM, Elevator, Movie Booking, Car Rental, Chess, and
+Cab Booking among others.
+
+A useful companion artifact is a **state transition table**, which makes
+gaps obvious in a way a diagram sometimes hides:
+
+| From \ Event | pay() | ship() | deliver() | cancel() |
+|---|---|---|---|---|
+| **Placed** | Paid | ❌ | ❌ | Cancelled |
+| **Paid** | ❌ | Shipped | ❌ | Cancelled |
+| **Shipped** | ❌ | ❌ | Delivered | ❌ |
+| **Delivered** | ❌ | ❌ | ❌ | ❌ |
+| **Cancelled** | ❌ | ❌ | ❌ | ❌ |
+
+Every ❌ is an error case you now know to handle deliberately.
 
 ## 5. From requirements to a class diagram — the mechanical steps
 

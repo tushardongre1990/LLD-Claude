@@ -1,6 +1,4 @@
-namespace Foundations.Solid.Isp;
-
-namespace Violation
+namespace Foundations.Solid.Isp.Violation
 {
     // A fat interface forces every implementer to deal with methods that
     // may not apply to it.
@@ -28,7 +26,7 @@ namespace Violation
     }
 }
 
-namespace Fixed
+namespace Foundations.Solid.Isp.Fixed
 {
     // Split by role. Implement only what applies.
     public interface IWorkable

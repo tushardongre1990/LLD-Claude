@@ -35,7 +35,12 @@ public class ProxyImage : IImage
 
     public void Display()
     {
-        _real ??= new RealImage(_filename); // load lazily, only once
+        // Single-threaded: fine. CONCURRENT CALLERS: this is the same
+        // race condition as the naive Singleton — two threads can both
+        // see _real == null and both construct a RealImage, doing the
+        // expensive load twice. Fix with Lazy<RealImage> (thread-safe by
+        // default) or a lock. Interviewers ask this exact follow-up.
+        _real ??= new RealImage(_filename);
         _real.Display();
     }
 }

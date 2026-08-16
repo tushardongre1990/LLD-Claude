@@ -43,7 +43,13 @@ public class PizzaBuilder
         return this;
     }
 
-    public Pizza Build() => new(_size, _toppings, _extraCheese);
+    // NOTE the .ToList(): we hand Pizza a *copy* of the toppings.
+    // Passing _toppings directly would leave the builder holding a live
+    // reference to the same List the "immutable" Pizza exposes — calling
+    // AddTopping() after Build() would then mutate an already-built Pizza.
+    // Declaring the property as IReadOnlyList<string> only stops *callers*
+    // from mutating it; it does not stop the builder from doing so.
+    public Pizza Build() => new(_size, _toppings.ToList(), _extraCheese);
 }
 
 public static class BuilderDemo

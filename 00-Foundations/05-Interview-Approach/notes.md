@@ -8,14 +8,26 @@ vague prompt into a structured 30-45 minute conversation.
 
 ```mermaid
 flowchart TD
-    A[1. Clarify requirements] --> B[2. Identify actors & use cases]
-    B --> C[3. Identify core objects/nouns]
-    C --> D[4. Define relationships between them]
-    D --> E[5. Define class diagram: attributes + methods]
-    E --> F[6. Apply SOLID, spot patterns to apply]
-    F --> G[7. Write core class skeletons / key method bodies]
-    G --> H[8. Discuss edge cases, concurrency, extensibility]
+    A[1. Clarify requirements & scope] --> B[2. Actors & use cases]
+    B --> C[3. Core objects: entities vs value objects]
+    C --> D[4. Responsibilities & invariants]
+    D --> E[5. Relationships]
+    E --> F[6. Class diagram]
+    F --> G[7. Identify what varies]
+    G --> H[8. Apply SOLID / select patterns]
+    H --> I[9. Sequence + state diagrams for tricky flows]
+    I --> J[10. Code the core classes]
+    J --> K[11. Concurrency on shared mutable state]
+    K --> L[12. Edge cases, tests, extensibility]
 ```
+
+Steps 4 and 7 are the two most commonly skipped, and they're where the
+most marks are. **Invariants** (step 4, see
+[`../07-Domain-Modeling/notes.md`](../07-Domain-Modeling/notes.md)) give you
+your edge cases and your concurrency discussion for free. **"What varies?"**
+(step 7, see
+[`../06-Core-Design-Principles/notes.md`](../06-Core-Design-Principles/notes.md))
+is what makes pattern selection obvious instead of guessed.
 
 ## 1. Clarify requirements (~5 min)
 
@@ -75,6 +87,18 @@ just the name. "I'll use Strategy for fee calculation because we have three
 interchangeable pricing rules that need to be swappable without touching
 `ParkingTicket`" is a strong answer; "I'll use Strategy" alone is not.
 
+Even stronger: add **why you rejected the alternative**. *"Strategy rather
+than State, because the pricing rule is chosen once when the ticket is
+created — it isn't the ticket changing its own behavior as it moves through
+a lifecycle."* That one clause shows you understand both patterns.
+
+And know when to say **no**: *"I could extract a Strategy here, but there's
+only one pricing rule in the requirements — I'd keep it a method and pull
+the interface out when a second rule appears."* Restraint is a seniority
+signal; reflexive abstraction is a mid-level tell. See
+[`../03-SOLID-Principles/notes.md`](../03-SOLID-Principles/notes.md) §
+"SOLID vs over-engineering".
+
 ## 7. Write core class skeletons
 
 Once the diagram is stable, write the actual interfaces/classes for the
@@ -87,9 +111,11 @@ logic in Movie Ticket Booking). This is where language fluency (C#
 
 - **Concurrency**: "what happens if two requests race for the same
   resource?" (two drivers for the last spot, two users booking the last
-  seat) → discuss locking (pessimistic lock on the resource, e.g.
-  `lock`/`SELECT ... FOR UPDATE`) vs optimistic concurrency (version
-  numbers, retry on conflict). Know both terms and when each fits.
+  seat) → pessimistic locking vs optimistic versioning, where your critical
+  section is, and lock granularity. Full treatment in
+  [`../08-Concurrency/notes.md`](../08-Concurrency/notes.md) — this is the
+  most common senior-level follow-up in the whole interview, so don't wing
+  it. Raise it yourself the moment you identify shared mutable state.
 - **Extensibility**: "how would this change to support Y?" → your answer
   should be "add a new class implementing an existing interface," not "I'd
   need to rewrite X." If it's the latter, that's a signal to revisit the

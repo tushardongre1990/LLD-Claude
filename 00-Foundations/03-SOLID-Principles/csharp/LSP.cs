@@ -1,6 +1,4 @@
-namespace Foundations.Solid.Lsp;
-
-namespace Violation
+namespace Foundations.Solid.Lsp.Violation
 {
     // Square extends Rectangle: the textbook LSP violation. Setting Width on
     // a Square silently changes Height too, which breaks any caller that
@@ -39,7 +37,7 @@ namespace Violation
     }
 }
 
-namespace Fixed
+namespace Foundations.Solid.Lsp.Fixed
 {
     // Don't force a shared mutable-Width/Height contract on shapes that
     // don't actually share that behavior. Share only what's truly common.

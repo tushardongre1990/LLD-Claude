@@ -1,6 +1,4 @@
-namespace Foundations.Solid.Ocp;
-
-namespace Violation
+namespace Foundations.Solid.Ocp.Violation
 {
     public enum VehicleType { Car, Motorcycle }
 
@@ -17,7 +15,7 @@ namespace Violation
     }
 }
 
-namespace Fixed
+namespace Foundations.Solid.Ocp.Fixed
 {
     public abstract class Vehicle
     {

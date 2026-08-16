@@ -66,9 +66,23 @@ classDiagram
     note for Vehicle "Adding Truck = new class,\nzero edits to existing ones"
 ```
 
-**Interview tell**: any `switch(type)` or long `if/else if` chain over an
-enum, especially one you can imagine growing — this is the #1 recurring
-"can you improve this?" follow-up interviewers ask.
+**Interview tell**: a `switch`/`if-else if` chain over a type or category
+that you'd have to **revisit every time a new behavior is introduced**.
+That's the #1 recurring "can you improve this?" follow-up.
+
+⚠️ **Not every switch is a violation.** A small switch over a genuinely
+fixed set (days of the week, HTTP verbs, a closed protocol enum) is
+perfectly good code, and replacing it with five classes makes things
+worse. The signal isn't "a switch exists" — it's "this switch grows
+whenever the domain grows." Say that distinction out loud if an
+interviewer shows you a switch; reflexively answering "that violates OCP,
+I'd add an interface" is a mild over-engineering tell.
+
+Also worth naming: OCP is about **anticipated** axes of change. You cannot
+make a class open to *every* kind of extension, and trying to produces
+speculative abstraction. Pick the axis the requirements actually suggest
+will vary. (See KISS/YAGNI in
+[`../06-Core-Design-Principles/notes.md`](../06-Core-Design-Principles/notes.md).)
 
 ## L — Liskov Substitution Principle
 
@@ -162,9 +176,50 @@ unit tests, `SqlRepository` in production, with zero changes to
 `ParkingLot`. This is also literally the **Strategy pattern** and the
 **Dependency Injection** technique you'll use constantly in case studies.
 
-**Interview tell**: constructing a concrete class with `new` deep inside a
-business-logic class, instead of receiving an interface through the
-constructor — makes the class untestable and rigid.
+**Interview tell**: a business-logic class **hard-wiring its own
+infrastructure**, e.g. `private readonly SqlOrderRepository _repo = new();`
+inside `OrderService`. That's what makes a class untestable and rigid.
+
+⚠️ **`new` is not banned.** DIP is about not depending on volatile,
+*infrastructure* details (databases, HTTP clients, file systems, clocks,
+third-party SDKs) — not about eliminating object creation. These are all
+completely fine:
+
+```csharp
+var money = new Money(100, "INR");        // value object — no reason to inject
+var ticket = new Ticket(spot, DateTime.Now); // domain object the class owns
+return new List<Order>();                  // plain data structure
+```
+
+The question to ask is: *"would I ever want to substitute this in a test or
+a different deployment?"* If yes → inject the abstraction. If it's a value
+object or an owned domain object, `new` is the right call and injecting it
+would be pointless ceremony.
+
+## SOLID vs over-engineering — read this before you apply any of it
+
+SOLID describes forces to balance, not rules to maximize. Each principle
+has a failure mode when pushed too far:
+
+| Principle | Pushed too far becomes |
+|---|---|
+| SRP | Dozens of one-method classes; the logic is now scattered and harder to follow than the "god class" was |
+| OCP | Speculative interfaces for variation that never arrives (YAGNI) |
+| LSP | Refusing all inheritance, even where a taxonomy is genuinely correct |
+| ISP | A separate interface per method; implementers declare six interfaces to do one job |
+| DIP | Injecting everything, including value objects and `DateTime`; a constructor with nine parameters and an IoC container to understand before you can read any code |
+
+An interface with exactly one implementation, added "for flexibility," is a
+liability until a second implementation exists: it adds a file, an
+indirection, and a lie about the design's intent.
+
+**The interview move**: when asked "should you add an abstraction here?",
+being able to say *"no — there's one implementation and the requirements
+don't suggest a second; I'd extract the interface when the second one
+appears"* is a **stronger** answer than adding it. Interviewers are
+watching for judgment, and reflexive abstraction is a common mid-level
+tell. Complementary principles (KISS, YAGNI, and the rest) are in
+[`../06-Core-Design-Principles/notes.md`](../06-Core-Design-Principles/notes.md).
 
 ## How SOLID connects to design patterns (next folder)
 

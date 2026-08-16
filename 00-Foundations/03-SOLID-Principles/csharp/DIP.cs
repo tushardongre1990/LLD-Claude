@@ -1,6 +1,4 @@
-namespace Foundations.Solid.Dip;
-
-namespace Violation
+namespace Foundations.Solid.Dip.Violation
 {
     // High-level ParkingLot is welded to a concrete, low-level SqlDatabase.
     // Can't unit test ParkingLot without a real database; can't swap storage.
@@ -17,7 +15,7 @@ namespace Violation
     }
 }
 
-namespace Fixed
+namespace Foundations.Solid.Dip.Fixed
 {
     // Both the high-level policy (ParkingLot) and the low-level detail
     // (SqlRepository) depend on this abstraction instead of on each other.

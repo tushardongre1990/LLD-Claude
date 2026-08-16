@@ -21,16 +21,19 @@ public class TreeType
 // created once and shared, not once per Tree instance.
 public class TreeTypeFactory
 {
-    private readonly Dictionary<string, TreeType> _pool = new();
+    // Tuple key rather than a concatenated string: no separator-collision
+    // bugs (e.g. "a:b" + "c" vs "a" + "b:c"), no allocation to build the
+    // key, and the compiler enforces the key's shape.
+    private readonly Dictionary<(string Name, string TextureId), TreeType> _pool = new();
 
     public TreeType GetTreeType(string name, string textureId)
     {
-        string key = $"{name}:{textureId}";
+        var key = (name, textureId);
         if (!_pool.TryGetValue(key, out var type))
         {
             type = new TreeType(name, textureId);
             _pool[key] = type;
-            Console.WriteLine($"Created new TreeType for {key} (pool size now {_pool.Count})");
+            Console.WriteLine($"Created new TreeType for {name}/{textureId} (pool size now {_pool.Count})");
         }
         return type;
     }

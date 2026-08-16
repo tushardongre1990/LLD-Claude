@@ -5,10 +5,14 @@ interview they matter for two reasons:
 
 1. **Vocabulary/speed** — saying "I'll use Strategy here" communicates an
    entire structure in three words instead of you re-deriving it live.
-2. **They're the concrete payoff of SOLID** — every pattern here exists
-   because it satisfies OCP, DIP, or SRP in a specific recurring shape. If
-   you understand *why* (see `00-Foundations/03-SOLID-Principles`), you'll
-   never misapply one.
+2. **They're worked examples of good design goals** — recurring ways to get
+   low coupling, extensibility, clear separation of responsibilities, and
+   encapsulation of what varies. SOLID (see
+   [`../03-SOLID-Principles/notes.md`](../03-SOLID-Principles/notes.md))
+   helps *explain* why many of these structures pay off, but a pattern is
+   not simply "an implementation of a SOLID principle" — several predate
+   SOLID and exist for reasons of their own (Flyweight is a memory
+   optimization; Iterator is about traversal encapsulation).
 
 **Anti-pattern to avoid in interviews**: don't force a pattern in just to
 namedrop it. Interviewers notice "resume-driven design." Only reach for a
@@ -54,14 +58,30 @@ that they're used.
 - **Behavioral** — patterns about *how objects communicate and share
   responsibility* for a behavior/algorithm.
 
-## Suggested order to learn them
+## Two companion pages you should use constantly
 
-Highest interview frequency first: **Strategy, Factory Method, Singleton,
-Observer, Decorator, Builder** cover the large majority of what actually
-comes up in case studies. Then State, Adapter, Facade, Command. The rest
-(Abstract Factory, Prototype, Composite, Proxy, Flyweight, Bridge, Chain of
-Responsibility, Template Method, Iterator, Mediator, Memento, Visitor) round
-out the GoF set and each shows up in at least one classic case study.
+- **[Pattern-Selection-Guide.md](Pattern-Selection-Guide.md)** — "I see
+  *this* problem in my design → consider *that* pattern." Use it while
+  designing a case study.
+- **[Pattern-Comparisons.md](Pattern-Comparisons.md)** — every
+  "what's the difference between X and Y?" pair in one place. Use it while
+  revising; these are among the most common interview questions.
+
+## Not all 23 deserve equal mastery
+
+Know all of them, but budget your effort by how often they actually decide
+a case study:
+
+| Tier | Patterns | Target depth |
+|---|---|---|
+| **A — know cold** | Strategy, Factory (Simple/Method), Observer, State, Decorator, Builder, Adapter, Facade, Command | Can design with it, code it from memory, and justify it against alternatives |
+| **B — understand & implement** | Singleton, Abstract Factory, Composite, Proxy, Chain of Responsibility, Mediator, Memento, Template Method | Can explain the structure and write it with a moment's thought |
+| **C — recognize & explain** | Prototype, Flyweight, Bridge, Iterator, Visitor | Can define it, name a use case, and recognize when someone else applies it |
+
+Learn Tier A first — it covers the large majority of what actually comes up
+in case studies. Under the just-in-time approach (see
+[`../../01-Case-Studies/README.md`](../../01-Case-Studies/README.md)) you'll
+pick these up as the case studies demand them rather than all at once.
 
 ## How each pattern folder is structured
 

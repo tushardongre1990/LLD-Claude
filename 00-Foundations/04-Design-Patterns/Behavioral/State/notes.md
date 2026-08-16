@@ -42,26 +42,40 @@ public class Order
 classDiagram
     class Order {
         -IOrderState state
+        +Pay() void
         +Ship() void
+        +Deliver() void
         +Cancel() void
-        +SetState(state) void
+        ~TransitionTo(state) void
     }
     class IOrderState {
         <<interface>>
+        +Pay(order) void
         +Ship(order) void
+        +Deliver(order) void
         +Cancel(order) void
     }
     class PlacedState
     class PaidState
     class ShippedState
+    class DeliveredState
     class CancelledState
 
     Order o-- IOrderState
     IOrderState <|.. PlacedState
     IOrderState <|.. PaidState
     IOrderState <|.. ShippedState
+    IOrderState <|.. DeliveredState
     IOrderState <|.. CancelledState
 ```
+
+**Note the `~` (internal) on `TransitionTo`.** The state classes need to
+drive transitions, but it must *not* be public — a public `SetState` lets
+any caller slam the order into an arbitrary state and bypass every rule,
+which defeats the whole point of the pattern. Scope it to the assembly
+(C# `internal`) so only the state classes can call it. Interviewers do
+notice this: "who is allowed to change the state?" is a natural follow-up,
+and "anyone, it's public" is the wrong answer.
 
 ```mermaid
 stateDiagram-v2

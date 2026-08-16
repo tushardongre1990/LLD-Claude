@@ -1,6 +1,4 @@
-namespace Foundations.Solid.Srp;
-
-namespace Violation
+namespace Foundations.Solid.Srp.Violation
 {
     // Three reasons to change live in one class: billing rules, persistence
     // technology, and receipt formatting.
@@ -20,7 +18,7 @@ namespace Violation
     }
 }
 
-namespace Fixed
+namespace Foundations.Solid.Srp.Fixed
 {
     // Each class now changes for exactly one reason.
     public class FeeCalculator
