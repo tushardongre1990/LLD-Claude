@@ -38,8 +38,8 @@ Everything in `00-Foundations` builds the vocabulary. Everything in
 ```mermaid
 classDiagram
     class Vehicle {
-        -string licensePlate
-        -int speed
+        -licensePlate : string
+        -speed : int
         +Accelerate() void
         +Brake() void
     }
@@ -66,7 +66,7 @@ field isn't exposed; they can only call `Withdraw()`, which enforces the rule.
 ```mermaid
 classDiagram
     class BankAccount {
-        -decimal _balance
+        -_balance : decimal
         +Deposit(amount) void
         +Withdraw(amount) bool
         +GetBalance() decimal
@@ -126,7 +126,7 @@ classDiagram
         +Pay(amount) bool
     }
     class Checkout {
-        -IPaymentProcessor _processor
+        -_processor : IPaymentProcessor
         +CompleteOrder(total) bool
     }
     IPaymentProcessor <|.. CreditCardProcessor
@@ -199,7 +199,7 @@ members and optionally overriding behavior.
 classDiagram
     class Vehicle {
         <<abstract>>
-        +string LicensePlate
+        +LicensePlate : string
         +DisplayPlate() void
         +CalculateParkingFee(hours)* decimal
     }
@@ -309,8 +309,8 @@ enum field, that's almost always a sign you should be using polymorphism
 ```mermaid
 classDiagram
     class Car {
-        -IEngine _engine
-        -ITransmission _transmission
+        -_engine : IEngine
+        -_transmission : ITransmission
         +Start() void
     }
     class IEngine {

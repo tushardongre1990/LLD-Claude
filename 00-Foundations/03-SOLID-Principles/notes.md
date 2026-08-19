@@ -147,8 +147,8 @@ code that assumed setting `Width` on a `Rectangle` leaves `Height` alone.
 ```mermaid
 classDiagram
     class Rectangle {
-        +Width int
-        +Height int
+        +Width : int
+        +Height : int
         +Area() int
     }
     class Square
@@ -170,12 +170,12 @@ classDiagram
         +Area() int
     }
     class Rectangle {
-        +Width int
-        +Height int
+        +Width : int
+        +Height : int
         +Area() int
     }
     class Square {
-        +Side int
+        +Side : int
         +Area() int
     }
     IShape <|.. Rectangle
@@ -278,7 +278,7 @@ violated in real time.
 classDiagram
     class ParkingLot {
         <<Violation>>
-        -SqlDatabase db
+        -db : SqlDatabase
     }
     class SqlDatabase
     ParkingLot --> SqlDatabase : concrete dependency
@@ -290,7 +290,7 @@ Fix:
 ```mermaid
 classDiagram
     class ParkingLot {
-        -ITicketRepository _repository
+        -_repository : ITicketRepository
         +IssueTicket(ticketId) void
     }
     class ITicketRepository {

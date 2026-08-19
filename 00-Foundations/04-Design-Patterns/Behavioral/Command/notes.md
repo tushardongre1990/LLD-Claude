@@ -26,8 +26,8 @@ classDiagram
     TurnOnCommand --> Light : receiver
 
     class RemoteControl {
-        -Stack~ICommand~ _undo
-        -Stack~ICommand~ _redo
+        -_undo : Stack~ICommand~
+        -_redo : Stack~ICommand~
         +PressButton(command) void
         +PressUndo() bool
         +PressRedo() bool

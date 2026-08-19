@@ -41,7 +41,7 @@ public class Order
 ```mermaid
 classDiagram
     class Order {
-        -IOrderState state
+        -state : IOrderState
         +Pay() void
         +Ship() void
         +Deliver() void

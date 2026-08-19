@@ -15,12 +15,12 @@ classDiagram
         +Next() T
     }
     class BrowserHistory {
-        -List~string~ urls
+        -urls : List~string~
         +CreateIterator() IIterator~string~
     }
     class ListIterator~T~ {
-        -List~T~ _items
-        -int _position
+        -_items : List~T~
+        -_position : int
         +HasNext() bool
         +Next() T
     }

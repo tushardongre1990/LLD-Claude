@@ -23,14 +23,14 @@ classDiagram
         +SendMessage(message, sender) void
     }
     class ChatRoom {
-        -List~User~ _users
+        -_users : List~User~
     }
     IChatMediator <|.. ChatRoom
 
     class User {
         <<abstract>>
-        #IChatMediator Mediator
-        +string Name
+        #Mediator : IChatMediator
+        +Name : string
         +Send(message) void
         +Receive(message) void
     }

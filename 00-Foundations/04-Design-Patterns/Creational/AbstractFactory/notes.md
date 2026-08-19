@@ -25,8 +25,8 @@ classDiagram
     INotificationFactory ..> ISmsNotifier : creates
 
     class NotificationService {
-        -IEmailNotifier _email
-        -ISmsNotifier _sms
+        -_email : IEmailNotifier
+        -_sms : ISmsNotifier
         +NotifyUser(contact, message) void
     }
     NotificationService --> INotificationFactory : built from

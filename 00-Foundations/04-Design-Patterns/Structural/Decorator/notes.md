@@ -24,7 +24,7 @@ classDiagram
     class Espresso
     class BeverageDecorator {
         <<abstract>>
-        #Beverage inner
+        #inner : Beverage
         +Cost() decimal
         +Description() string
     }

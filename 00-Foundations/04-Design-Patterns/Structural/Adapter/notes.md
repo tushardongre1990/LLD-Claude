@@ -17,7 +17,7 @@ classDiagram
         +MakePayment(dollars) string
     }
     class StripeAdapter {
-        -LegacyStripeSdk sdk
+        -sdk : LegacyStripeSdk
         +Charge(amountCents) bool
     }
     IPaymentGateway <|.. StripeAdapter

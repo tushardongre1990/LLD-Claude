@@ -15,14 +15,14 @@ classDiagram
         +Clone() T
     }
     class Order {
-        +string CustomerId
-        +List~Item~ Items
+        +CustomerId : string
+        +Items : List~Item~
         +Clone() Order
         +ShallowClone() Order
     }
     class Item {
-        +string Name
-        +int Quantity
+        +Name : string
+        +Quantity : int
         +Clone() Item
     }
     IPrototype~T~ <|.. Order

@@ -9,9 +9,9 @@ global access point to it.
 ```mermaid
 classDiagram
     class Singleton {
-        -static Singleton instance
+        -instance : Singleton$
         -Singleton()
-        +static GetInstance() Singleton
+        +GetInstance() Singleton$
     }
 ```
 

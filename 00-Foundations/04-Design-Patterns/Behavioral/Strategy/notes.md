@@ -25,7 +25,7 @@ classDiagram
     IFeeStrategy <|.. FreeFirstHourStrategy
 
     class ParkingTicket {
-        -IFeeStrategy _strategy
+        -_strategy : IFeeStrategy
         +CalculateFee(hours) decimal
     }
     ParkingTicket o-- IFeeStrategy

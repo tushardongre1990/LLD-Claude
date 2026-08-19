@@ -15,19 +15,19 @@ efficiently, by splitting an object's state into:
 classDiagram
     class TreeType {
         <<intrinsic: shared, immutable>>
-        +string Name
-        +string TextureId
+        +Name : string
+        +TextureId : string
         +Draw(x, y) void
     }
     class TreeTypeFactory {
-        -Dictionary~tuple,TreeType~ _pool
+        -_pool : Dictionary~tuple,TreeType~
         +GetTreeType(name, textureId) TreeType
     }
     class Tree {
         <<extrinsic: unique per instance>>
-        -int _x
-        -int _y
-        -TreeType _type
+        -_x : int
+        -_y : int
+        -_type : TreeType
         +Draw() void
     }
     TreeTypeFactory --> TreeType : caches/reuses

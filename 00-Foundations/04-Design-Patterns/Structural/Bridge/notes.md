@@ -20,7 +20,7 @@ that both want to grow.
 classDiagram
     class RemoteControl {
         <<abstract>>
-        #IDevice Device
+        #Device : IDevice
         +TogglePower() void
     }
     class BasicRemote
@@ -30,7 +30,7 @@ classDiagram
 
     class IDevice {
         <<interface>>
-        +IsOn bool
+        +IsOn : bool
         +TurnOn() void
         +TurnOff() void
     }

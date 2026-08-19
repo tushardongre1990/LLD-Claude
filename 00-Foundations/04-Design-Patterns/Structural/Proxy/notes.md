@@ -17,8 +17,8 @@ classDiagram
         +Display() void
     }
     class ProxyImage {
-        -RealImage real
-        -string filename
+        -real : RealImage
+        -filename : string
         +Display() void
     }
     IImage <|.. RealImage

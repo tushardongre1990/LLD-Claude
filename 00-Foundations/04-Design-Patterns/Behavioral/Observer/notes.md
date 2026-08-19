@@ -20,8 +20,8 @@ classDiagram
         +Unsubscribe(observer) void
     }
     class StockTicker {
-        -List~IStockObserver~ _observers
-        -decimal _price
+        -_observers : List~IStockObserver~
+        -_price : decimal
         +SetPrice(price) void
         -NotifyAll() void
     }

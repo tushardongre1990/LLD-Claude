@@ -11,12 +11,12 @@ constructor that takes ten optional parameters.
 ```mermaid
 classDiagram
     class Pizza {
-        -string size
-        -List~string~ toppings
-        -bool extraCheese
+        -size : string
+        -toppings : List~string~
+        -extraCheese : bool
     }
     class PizzaBuilder {
-        -Pizza pizza
+        -pizza : Pizza
         +WithSize(size) PizzaBuilder
         +AddTopping(topping) PizzaBuilder
         +WithExtraCheese() PizzaBuilder

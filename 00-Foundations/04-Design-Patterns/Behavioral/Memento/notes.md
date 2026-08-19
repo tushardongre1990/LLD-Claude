@@ -11,16 +11,16 @@ at that internal state directly.
 ```mermaid
 classDiagram
     class TextEditor {
-        -string content
+        -content : string
         +Save() EditorMemento
         +Restore(memento) void
     }
     class EditorMemento {
-        -string content
+        -content : string
         +GetContent() string
     }
     class History {
-        -Stack~EditorMemento~ mementos
+        -mementos : Stack~EditorMemento~
         +Push(memento) void
         +Pop() EditorMemento
     }

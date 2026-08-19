@@ -11,7 +11,7 @@ The sender doesn't know which handler will end up handling it.
 classDiagram
     class SupportHandler {
         <<abstract>>
-        -SupportHandler _next
+        -_next : SupportHandler
         +SetNext(next) SupportHandler
         +Handle(ticket) void
         #CanHandle(ticket)* bool

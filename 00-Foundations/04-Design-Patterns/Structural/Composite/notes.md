@@ -17,7 +17,7 @@ classDiagram
         +GetSize() long
     }
     class Folder {
-        -List~FileSystemEntry~ children
+        -children : List~FileSystemEntry~
         +Add(entry) void
         +GetSize() long
     }
