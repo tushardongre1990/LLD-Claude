@@ -26,9 +26,9 @@ every LLD interview.
 ```mermaid
 classDiagram
     class ParkingSpot {
-        -string id
-        -bool isOccupied
-        -SpotSize size
+        -id : string
+        -isOccupied : bool
+        -size : SpotSize
         +Assign(vehicle) bool
         +Free() void
     }
