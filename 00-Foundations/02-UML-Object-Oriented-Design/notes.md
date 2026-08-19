@@ -159,6 +159,19 @@ Reads as: one `ParkingFloor` is composed of zero-or-more `ParkingSpot`s.
 
 ### 2.7 Full cheat sheet
 
+The same six relationships, rendered together so the actual arrowhead /
+diamond / triangle shapes are visible at a glance:
+
+```mermaid
+classDiagram
+    Association1 --> Association2 : association
+    Aggregation1 o-- Aggregation2 : aggregation
+    Composition1 *-- Composition2 : composition
+    Inheritance1 <|-- Inheritance2 : inheritance
+    Realization1 <|.. Realization2 : realization
+    Dependency1 ..> Dependency2 : dependency
+```
+
 | Relationship | Verb | Arrow | Lifecycle |
 |---|---|---|---|
 | Association | uses/knows | `-->` plain | independent |
