@@ -3,6 +3,11 @@
 A self-paced LLD course built for interview preparation, in **C#**. Foundations
 are complete; case studies are added one at a time as you work through them.
 
+> **📍 The primary learning path is [`STUDY-PLAN.md`](STUDY-PLAN.md).**
+> It says which case study to do next, exactly what to read before it, and
+> tracks your progress. This README is the orientation and reference page —
+> when in doubt about *what to do now*, open the study plan.
+
 ---
 
 ## Start here
