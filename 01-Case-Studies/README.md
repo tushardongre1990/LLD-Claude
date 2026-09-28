@@ -1,29 +1,34 @@
 # Case Studies
 
-Machine-coding / LLD interview problems, added one at a time — see the
-roadmap and order in the root [README.md](../README.md).
+Machine-coding / LLD interview problems, **solved by you**, one at a time.
+The order, and what to read before each, is in
+[`../STUDY-PLAN.md`](../STUDY-PLAN.md).
 
-Just say which one you want next (e.g. "let's do Parking Lot") and it'll be
-added here as its own folder.
+There are no reference solutions here. Each folder is your own attempt,
+created when you start that problem.
 
 ## How each session runs
 
-- **Just-in-time concept coverage.** Instead of reading all 23 design
-  patterns up front, each case study pulls in only the concepts and
-  patterns it actually needs (see its row in the roadmap table), covers
-  those, and then solves the problem with them. `00-Foundations` stays as a
-  standing reference for everything else.
-- **Design it yourself first.** Read only the *requirements* section, then
-  time yourself producing a class diagram and pattern choices before
-  looking at the rest. Comparing afterwards tells you which requirement or
-  relationship you failed to extract — that's the actual signal.
-- **Active recall, not passive reading.** After you say you've read a case
-  study's notes or finished implementing it, expect interview-style
-  questions on it, with follow-ups that drill into your answers. Treat it
-  as a mock interview.
-- **Notes stay live.** Anything that comes out of that Q&A — an edge case,
-  a variation, a clarification — gets folded back into that case study's
-  `notes.md`, so the notes reflect the full discussion.
+- **Just-in-time concept coverage.** Before each case study, read only its
+  "Read before" list in the study plan. `00-Foundations` stays as a standing
+  reference for everything else.
+- **Start from the prompt, not a spec.** Ask for the one-line prompt
+  ("give me the Parking Lot prompt"). You get what an interviewer gives you —
+  no requirements list. Extracting requirements through clarifying questions
+  is part of what's being tested, and they're answered in character.
+- **Design it yourself, timed.** Write your design into the folder's
+  `notes.md` using the template below, within the timing targets. Then get it
+  reviewed interviewer-style: which requirement, invariant or relationship
+  you failed to extract, and which pattern you forced in or should have
+  rejected — that's the actual signal.
+- **Implement, then get the code reviewed.** C# plus tests, then a
+  requirement change to absorb.
+- **Active recall, not passive reading.** Expect follow-up questions that
+  drill into your answers. Treat it as a mock interview.
+- **Record what you missed.** The review goes in the folder's `review.md`.
+  Fold the gaps into your own `notes.md`, and add one line per miss to
+  [`MISTAKES.md`](MISTAKES.md) — re-reading that log before an interview is
+  worth more than re-reading solutions.
 
 ## Timing targets
 
@@ -36,9 +41,10 @@ added here as its own folder.
 ## Folder template
 
 ```
-NN-CaseStudyName/
-├── notes.md
-└── csharp/           full implementation + tests
+NN-CaseStudyName/     NN = the roadmap number, not the order you do it in
+├── notes.md          your design, following the structure below
+├── review.md         the interviewer-style review of it, and the follow-ups asked
+└── csharp/           your implementation (tests live under Tests/)
 ```
 
 ## `notes.md` structure

@@ -182,13 +182,16 @@ logic in Movie Ticket Booking). This is where language fluency (C#
 
 ## How to practice with this vault
 
-For each case study in `01-Case-Studies`:
-1. Read only the **requirements section** first (don't peek at the class
-   diagram).
-2. Time yourself: 10-15 minutes to produce your own class diagram + pattern
-   choices on paper/whiteboard.
-3. Compare against the case study's notes — note what you missed, not to
-   copy the "answer" but to see which requirement or relationship you
+The case studies have no reference solutions — you write them. For each one
+(order and prerequisites in [`../../STUDY-PLAN.md`](../../STUDY-PLAN.md)):
+1. Start from the **one-line prompt** only, and run step 1 of this framework
+   for real: ask clarifying questions and write down the answers as your
+   requirements.
+2. Run steps 2–8 against the clock (see
+   [`../../01-Case-Studies/README.md`](../../01-Case-Studies/README.md) for
+   timing targets), writing the result into that case study's `notes.md`.
+3. Get the design reviewed interviewer-style — the goal is not to match an
+   "answer" but to see which requirement, invariant or relationship you
    didn't extract.
-4. Only then read the code, to check your method signatures/logic against
-   a working reference.
+4. Only then implement it, and get the code reviewed against the same
+   invariants.

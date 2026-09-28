@@ -33,10 +33,12 @@ in one .NET solution so every example compiles, runs, and is tested.
 - **Curriculum**: modeled on Educative's *"Grokking the Low Level Design
   Interview Using OOD Principles"* — foundations + 21 case studies, plus 2
   bonus ones (Splitwise, Cab Booking) that are common interview asks outside
-  that course. The full roadmap with checkboxes lives in the root
-  [`README.md`](README.md) — that is the single source of truth for progress.
-- **Build approach** (user's choice): foundations built in full up front; case
-  studies added **one at a time, on request** — never batch-generated.
+  that course. The case-study list lives in the root [`README.md`](README.md);
+  the **order to do them in, and what to read before each**, lives in
+  [`STUDY-PLAN.md`](STUDY-PLAN.md) — that is the source of truth for progress.
+- **Build approach** (user's choice): foundations built in full up front. Case
+  studies are **solved by the user, not written by the assistant** (decided
+  2026-09-28) — see §5.2.
 
 ### Status
 
@@ -47,7 +49,7 @@ GoF + `Pattern-Selection-Guide.md` + `Pattern-Comparisons.md`),
 08-Concurrency, 09-Testing, 10-Anti-Patterns.
 
 **`01-Case-Studies/` contains only a README template — no case studies written
-yet.** That is the live edge of the project.
+yet.** That is the live edge of the project, and the user fills it in.
 
 Frozen means: four external review rounds were run, the last found only minor
 wording issues (all fixed) and explicitly recommended stopping.
@@ -121,14 +123,23 @@ message without being asked.**
 
 ### 5.2 How case-study sessions are taught
 
-Corrected by the user on 2026-07-31 after an initial wrong approach:
+Corrected by the user on 2026-07-31 after an initial wrong approach, and
+updated 2026-09-28 when the user decided to solve the case studies themselves:
 
-1. **Just-in-time topic coverage, not front-loaded.** Don't march through all
-   design patterns first and only then solve a case study. For each case study,
-   identify its 2–4 relevant patterns from
-   [`00-Foundations/04-Design-Patterns/README.md`](00-Foundations/04-Design-Patterns/README.md),
-   briefly link/summarize *just those*, then solve it. (The foundations stay as
-   a complete lookup reference — this is about *sequencing*, not deletion.)
+0. **The user solves; the assistant never writes the solution.** Per case
+   study: give **only the one-line prompt**, as an interviewer would → answer
+   the user's clarifying questions *in character* → the user designs (timed)
+   and writes their own `notes.md` → review it like an interviewer (missed
+   requirements, invariants, relationships; patterns forced in or wrongly
+   rejected) → the user implements C# + tests → review the code → throw a
+   requirement change. Record the review in that study's `review.md`, and add
+   each miss to `01-Case-Studies/MISTAKES.md`. **Do not volunteer a reference
+   design, class diagram, or pattern choice** — hints only if asked, and a full
+   reference solution only if explicitly requested *after* the user's attempt.
+1. **Just-in-time topic coverage, not front-loaded.** The reading to do before
+   each case study is fixed in [`STUDY-PLAN.md`](STUDY-PLAN.md) — follow it
+   rather than re-deriving it. (The foundations stay as a complete lookup
+   reference — this is about *sequencing*, not deletion.)
 2. **Quiz like a real interviewer after self-reported completion.** When the
    user says they've read a topic or implemented something, don't just move on —
    ask interview-style questions, with follow-ups that drill deeper based on
@@ -136,7 +147,9 @@ Corrected by the user on 2026-07-31 after an initial wrong approach:
 3. **Feed gaps back into the notes.** Anything that surfaces during that Q&A and
    isn't already in the relevant `notes.md` — an edge case, a variation, a
    clarification — gets added afterward, so the vault stays complete even though
-   it was written before the conversation happened.
+   it was written before the conversation happened. For a **case study**, the
+   user folds gaps into their own `notes.md`; the assistant records them in
+   `review.md` and `MISTAKES.md`, not by rewriting the user's design.
 
 **Why**: the user is optimizing for retention, wants material to appear only when
 it's needed to solve something, and wants testing built into the loop.
@@ -219,36 +232,41 @@ The same discipline caught a Builder mutability bug.
 
 When picking up this project:
 
-1. Read the roadmap in [`README.md`](README.md) and take the **next unchecked
-   case study**, unless the user names one.
-2. Follow the 19-section `notes.md` template in
-   [`01-Case-Studies/README.md`](01-Case-Studies/README.md): requirements →
-   invariants → class diagram → pattern selection *with rejected alternatives* →
-   sequence/state diagrams → concurrency → code → tests → extension exercises →
-   interviewer follow-ups.
-3. Run the teaching loop from §5.2 — don't just hand over a finished solution.
+1. Open [`STUDY-PLAN.md`](STUDY-PLAN.md) and find the **first unchecked case
+   study**, unless the user names one. Check whether they've done its "Read
+   before" list; if they say they have, quiz them on it (§5.2 step 2) first.
+2. Run the loop in §5.2 step 0: prompt → clarifications in character → the
+   user's design → interviewer review → the user's code → review → requirement
+   change. The user's `notes.md` follows the 19-section template in
+   [`01-Case-Studies/README.md`](01-Case-Studies/README.md), but **they** write it.
+3. When the user starts writing C# for the first case study, scaffold the
+   case-study project and test project (added to `LLD-Claude.slnx`) — not
+   before.
 4. Re-run `dotnet build` + `dotnet test`, then hand over a commit message (§5.1).
 
-Tier 1 (Parking Lot → Vending Machine → ATM) is the suggested entry point;
-⭐-marked studies (Movie Ticket Booking, Chess, Splitwise) are the highest
-interview frequency per hour spent.
+Parking Lot is the entry point (Stage 1 of the plan); the plan pulls the
+⭐-marked studies (Movie Ticket Booking, Splitwise, Chess) earlier because they
+have the highest interview frequency per hour spent.
 
 ## 7. Repo layout
 
 ```
 LLD-Claude/
 ├── CLAUDE.md                             ← this file
-├── README.md                             ← reading order, run commands, roadmap
+├── README.md                             ← run commands, case-study list
+├── STUDY-PLAN.md                         ← order of work: read-before list per case study
 ├── LLD-Claude.slnx
 ├── .claude/settings.local.json           ← committed; pre-allows dotnet commands
 ├── 00-Foundations/                       ← FROZEN; notes.md per topic + C# where useful
 │   ├── 01-OOP-Basics/ … 10-Anti-Patterns/
 │   └── 04-Design-Patterns/{Creational,Structural,Behavioral}/
-├── 01-Case-Studies/                      ← README template only; filled in one at a time
+├── 01-Case-Studies/                      ← README template + MISTAKES.md; the user adds
+│   └── NN-Name/{notes.md, review.md, csharp/}   one folder per study as they solve it
 ├── Runner/                               ← `dotnet run --project Runner <demo>`
 └── Tests/LLD.Foundations.Tests/          ← 45 xUnit tests
 ```
 
 Folder numbers are **stable IDs, not a reading order** — the reading order is
-the table in `README.md`. Conceptual topics (UML, core principles, domain
+[`STUDY-PLAN.md`](STUDY-PLAN.md). Case-study folders use their roadmap number
+(`01-ParkingLot`, `08-MovieBooking`), not the order they're done in. Conceptual topics (UML, core principles, domain
 modeling, testing, anti-patterns) are notes-only by design.

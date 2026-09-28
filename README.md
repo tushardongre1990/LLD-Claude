@@ -7,55 +7,43 @@ are complete; case studies are added one at a time as you work through them.
 
 ## Start here
 
-### 1. Read the foundations in this order
+### 1. Read a little, solve a case study, repeat
 
-**Don't read all 23 design patterns first** — that's passive learning, and
-avoiding it is the whole point of how this vault is structured.
-
-| # | Read | Why |
-|---|---|---|
-| 1 | [`01-OOP-Basics`](00-Foundations/01-OOP-Basics/notes.md) | The four pillars; composition vs inheritance |
-| 2 | [`02-UML`](00-Foundations/02-UML-Object-Oriented-Design/notes.md) | Class + sequence + state diagrams. Skim use-case; don't memorize notation |
-| 3 | [`03-SOLID`](00-Foundations/03-SOLID-Principles/notes.md) | Including the "SOLID vs over-engineering" section |
-| 4 | [`06-Core-Design-Principles`](00-Foundations/06-Core-Design-Principles/notes.md) | DRY, KISS, YAGNI, Tell-Don't-Ask, cohesion/coupling |
-| 5 | [`07-Domain-Modeling`](00-Foundations/07-Domain-Modeling/notes.md) | **Invariants** especially — highest-value page in the vault |
-| 6 | [`04-Design-Patterns/README`](00-Foundations/04-Design-Patterns/README.md) + [Selection Guide](00-Foundations/04-Design-Patterns/Pattern-Selection-Guide.md) | The index and selection guide **only** — not every pattern |
-| 7 | [`05-Interview-Approach`](00-Foundations/05-Interview-Approach/notes.md) | The framework you'll run on every case study |
-
-Then **start Tier 1** below, reading individual pattern notes only as each
-case study calls for them.
-
-Pull in the rest when they become relevant, not before:
-- [`08-Concurrency`](00-Foundations/08-Concurrency/notes.md) → at Movie Ticket Booking (#8)
-- [`09-Testing`](00-Foundations/09-Testing/notes.md) → when you start writing case-study code
-- [`10-Anti-Patterns`](00-Foundations/10-Anti-Patterns/notes.md) → skim once before your first real interview
-- [Pattern-Comparisons](00-Foundations/04-Design-Patterns/Pattern-Comparisons.md) → while revising ("what's the difference between X and Y?")
+Read [`01-OOP-Basics`](00-Foundations/01-OOP-Basics/notes.md),
+[`02-UML`](00-Foundations/02-UML-Object-Oriented-Design/notes.md) and
+[`03-SOLID`](00-Foundations/03-SOLID-Principles/notes.md) first. After that,
+**[`STUDY-PLAN.md`](STUDY-PLAN.md) is the path**: for every case study it lists
+exactly which topics and sections to read *before* attempting it. Topics are
+read just before the first problem that needs them — never all 23 design
+patterns up front, which is passive learning and exactly what this vault is
+structured to avoid.
 
 ### 2. Then run this loop on every case study
 
+**You solve the case studies yourself** — there are no reference solutions to
+peek at.
+
 ```
-Read ONLY the requirements section
+Get the one-line prompt (ask "give me the X prompt")
         ↓
-Design it yourself — timed, on paper
+Ask clarifying questions — answered as an interviewer would
+        ↓
+Design it yourself — timed, in your own notes.md
   (entities → invariants → class diagram → what varies → patterns)
         ↓
-Compare against the reference notes
+Get it reviewed interviewer-style — what did you fail to extract?
         ↓
-Study the gap — what did you fail to extract?
-        ↓
-Implement in C# + write 3-8 meaningful tests
-        ↓
-Get quizzed interviewer-style (say "I've finished X" and I'll drill you)
+Implement in C# + write 3-8 meaningful tests, then get the code reviewed
         ↓
 Handle the follow-ups and a requirement change
         ↓
-Next case study
+Log what you missed in MISTAKES.md → next case study
 ```
 
-**The design-it-yourself step is not optional.** Reading a finished solution
-feels productive and teaches very little; the interview value is in
-discovering what you missed. Timing targets and the full per-case-study
-template are in [`01-Case-Studies/README.md`](01-Case-Studies/README.md).
+**The design-it-yourself step is the whole point.** Reading a finished
+solution feels productive and teaches very little; the interview value is in
+discovering what you missed. Timing targets and the `notes.md` template are in
+[`01-Case-Studies/README.md`](01-Case-Studies/README.md).
 
 ### 3. Two rules that keep this honest
 
@@ -108,9 +96,8 @@ LLD-Claude/
 └── LLD-Claude.slnx
 ```
 
-Folder numbers are **stable IDs, not a reading order** — use the table in
-[Start here](#1-read-the-foundations-in-this-order). 06 and 07 are core
-concepts despite sitting after 05 numerically.
+Folder numbers are **stable IDs, not a reading order** — the order is
+[`STUDY-PLAN.md`](STUDY-PLAN.md).
 
 Every folder has a `notes.md`; most also carry runnable C# code. Conceptual
 topics (UML, core principles, domain modeling, testing, anti-patterns) are
@@ -135,17 +122,17 @@ notes-only by design.
 **Further theory now has diminishing returns.** The remaining gap is
 practice — anything new gets learned inside the case study that needs it.
 
-### Case studies — added one at a time, on request
+### Case studies — solved by you, one at a time
 
-Every row assumes OOP + UML + SOLID + Core Design Principles. The remaining
-columns are what that case study *additionally* draws on — read only those
-before attempting it.
+The `#` is each study's stable ID (and its folder number). The order to do
+them in, and exactly what to read before each, is in
+[`STUDY-PLAN.md`](STUDY-PLAN.md) — tick progress there.
 
 ⚠️ **"Likely patterns" are candidates, not a shopping list.** Several rows
 are genuinely designable without the listed pattern. See the
 [Pattern Selection Guide](00-Foundations/04-Design-Patterns/Pattern-Selection-Guide.md).
 
-Tiers are a suggested difficulty order, not a gate — jump wherever you want.
+Tiers group problems by what they exercise; the plan interleaves them.
 
 #### Tier 1 — start here
 | # | Case Study | Core concepts | Likely patterns | Advanced concerns | Status |
@@ -189,11 +176,11 @@ Tiers are a suggested difficulty order, not a gate — jump wherever you want.
 ⭐ = highest interview frequency / best value per hour spent.
 
 Each case study folder follows the template in
-[`01-Case-Studies/README.md`](01-Case-Studies/README.md): a `notes.md`
+[`01-Case-Studies/README.md`](01-Case-Studies/README.md): **your** `notes.md`
 (requirements → invariants → class diagram → pattern choices *with rejected
 alternatives* → sequence/state diagrams → concurrency → edge cases →
-extension exercises → interviewer follow-ups) plus a `csharp/`
-implementation and tests.
+extension exercises → interviewer follow-ups), a `review.md` recording the
+interviewer-style review of it, and your `csharp/` implementation.
 
 *Curriculum based on "Grokking the LLD Interview" (21 case studies), plus
 Splitwise and Cab Booking — both common interview asks not in that course.*
